@@ -10,7 +10,7 @@ This file is intended to be shared with Claude (claude.ai) to provide context wh
 
 ```
 Project: Paul — a self-hosted personal dashboard
-Stack: React (Vite) frontend, Node.js/Express backend, SQLite (better-sqlite3), Docker + Docker Compose
+Stack: React (Vite, TypeScript) frontend, Node.js/Express (TypeScript) backend, SQLite (better-sqlite3), Docker + Docker Compose
 Host environment: Windows with WSL
 Styling: No UI library decided yet — keep styles minimal and plain for now
 State management: React useState/useEffect only — no Redux or Zustand yet
@@ -38,7 +38,7 @@ paul/
 ```
 
 **Instructions for Claude:**
-- Scaffold a Vite React app inside `/client` using the `react` template
+- Scaffold a Vite React app inside `/client` using the `react-ts` template
 - Scaffold a minimal Express app inside `/server` with a single `GET /health` route that returns `{ status: "ok" }`
 - Both `client` and `server` should have their own `package.json`
 - Do not set up a shared `package.json` at the root yet
@@ -71,7 +71,7 @@ paul/
 **Goal:** Verify the frontend can successfully call the backend.
 
 **Requirements:**
-- Add a `useEffect` in the React `App.jsx` that calls `GET /health` on the Express server
+- Add a `useEffect` in the React `App.tsx` that calls `GET /health` on the Express server
 - Log the response to the console
 - Display "Server connected" or "Server unreachable" in the UI based on the result
 
@@ -97,7 +97,7 @@ paul/
 - Import the required CSS from `react-grid-layout`
 - Use the `Responsive` variant of the grid with a `lg` breakpoint only for now
 - The layout array should live in React state
-- Keep all logic in `App.jsx` for now — no need to split into components yet
+- Keep all logic in `App.tsx` for now — no need to split into components yet
 
 ---
 
@@ -113,10 +113,10 @@ Every widget is a React component that accepts exactly two props:
 Widgets must not fetch their own data. Data is always fetched server-side and passed down.
 
 **Instructions for Claude:**
-- Create a file at `client/src/widgets/WidgetBase.jsx` that serves as a documented example/template
+- Create a file at `client/src/widgets/WidgetBase.tsx` that serves as a documented example/template
 - The file should include JSDoc comments explaining the `config` and `data` prop shapes
-- Create a `PlaceholderWidget.jsx` in the same folder that renders its `config` and `data` as formatted JSON (useful for development)
-- Export both from a `client/src/widgets/index.js` barrel file
+- Create a `PlaceholderWidget.tsx` in the same folder that renders its `config` and `data` as formatted JSON (useful for development)
+- Export both from a `client/src/widgets/index.ts` barrel file
 
 ---
 
@@ -139,7 +139,7 @@ Widgets must not fetch their own data. Data is always fetched server-side and pa
 **Requirements:**
 - Add a `GET /api/weather` Express route that accepts `latitude`, `longitude`, and `units` as query params
 - The route fetches from Open-Meteo and returns the shaped data object above
-- Build `client/src/widgets/WeatherWidget.jsx` that displays temperature, wind speed, and a basic weather description derived from `weathercode`
+- Build `client/src/widgets/WeatherWidget.tsx` that displays temperature, wind speed, and a basic weather description derived from `weathercode`
 - The widget follows the `{ config, data }` contract from TASK-005
 
 **Instructions for Claude:**
@@ -164,7 +164,7 @@ Widgets must not fetch their own data. Data is always fetched server-side and pa
 - Update the React frontend to load the layout from `GET /api/layout` on mount and save to `POST /api/layout` on every change (debounced by 1 second)
 
 **Instructions for Claude:**
-- Initialize the database and create tables in a `server/db.js` file
+- Initialize the database and create tables in a `server/db.ts` file
 - Use synchronous `better-sqlite3` methods (not async)
 - Add a 1-second debounce on the frontend save to avoid saving on every pixel drag
 - Remove the `localStorage` logic from TASK-004
@@ -268,7 +268,7 @@ CREATE TABLE data_sources (
 
 ### TASK-012: Implement the script runner
 
-**Goal:** Execute user-written JavaScript server-side and store the output.
+**Goal:** Execute user-written TypeScript server-side and store the output.
 
 **Requirements:**
 - Use Node's built-in `vm` module to run scripts in a sandboxed context
@@ -305,7 +305,7 @@ The `data` prop is whatever JSON object the script returned.
 - If the source has `{ "error": "..." }`, display the error message in red
 
 **Instructions for Claude:**
-- Create `client/src/widgets/ScriptWidget.jsx`
+- Create `client/src/widgets/ScriptWidget.tsx`
 - Use a simple utility function to resolve dot-notation paths (do not use lodash)
 - Add "Script" to the available widget types in the Add Widget UI from TASK-009
 
@@ -328,7 +328,7 @@ The `data` prop is whatever JSON object the script returned.
 
 **Instructions for Claude:**
 - Install `@monaco-editor/react` in `/client`
-- Use JavaScript as the Monaco language mode
+- Use TypeScript as the Monaco language mode
 - The "Run Now" output should appear below the editor in a `<pre>` block
 - Keep routing simple — use a query param like `?view=scripts` to switch views rather than a full router
 

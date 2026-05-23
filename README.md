@@ -8,7 +8,7 @@ A self-hosted personal dashboard with customizable widgets and a user-facing scr
 
 Paul is a personal dashboard you run on your own machine. It gives you a single place to see the information that matters to you — weather, news, tasks, finances, dev stats, and more — laid out exactly the way you want it.
 
-What sets Paul apart from similar tools is its scripting layer. Instead of being limited to a fixed set of integrations, you can write your own JavaScript scripts that fetch data from any API or source, and display the result as a widget on your dashboard. Scripts written by others can also be imported and reused.
+What sets Paul apart from similar tools is its scripting layer. Instead of being limited to a fixed set of integrations, you can write your own TypeScript scripts that fetch data from any API or source, and display the result as a widget on your dashboard. Scripts written by others can also be imported and reused.
 
 Paul is built for personal use. It runs locally, stores everything on your own machine, and has no cloud dependency.
 
@@ -41,7 +41,7 @@ Paul ships with a small set of built-in widgets covering four data categories:
 - **Dev/tech:** GitHub activity, server stats (CPU, RAM, disk), uptime monitor
 
 ### Scripting Layer
-The scripting layer is Paul's core differentiator. Users can write JavaScript that runs server-side on a schedule or on demand. Scripts output JSON, which is consumed by a "Script Widget" and displayed on the dashboard. A built-in code editor (Monaco Editor) is available directly in the UI. API keys and secrets are stored securely in an encrypted local store.
+The scripting layer is Paul's core differentiator. Users can write TypeScript that runs server-side on a schedule or on demand. Scripts output JSON, which is consumed by a "Script Widget" and displayed on the dashboard. A built-in code editor (Monaco Editor) is available directly in the UI. API keys and secrets are stored securely in an encrypted local store.
 
 Scripts can be exported and imported as JSON, enabling sharing with others.
 
@@ -51,8 +51,8 @@ Scripts can be exported and imported as JSON, enabling sharing with others.
 
 | Layer | Technology |
 |---|---|
-| Frontend | React (Vite), react-grid-layout |
-| Backend | Node.js, Express |
+| Frontend | React (Vite, TypeScript), react-grid-layout |
+| Backend | Node.js, Express, TypeScript |
 | Script Editor | Monaco Editor |
 | Database | SQLite (via better-sqlite3) |
 | Deployment | Docker + Docker Compose |
@@ -126,7 +126,7 @@ The goal of this phase is the feature that makes Paul unique.
 - Scripts stored in SQLite
 
 **Weeks 17–20 — Script Runner**
-- Server-side JavaScript execution using Node's `vm` module (sandboxed)
+- Server-side TypeScript execution using Node's `vm` module (sandboxed)
 - Cron-style scheduling for script execution
 - Script output (JSON) stored and served to widgets
 
