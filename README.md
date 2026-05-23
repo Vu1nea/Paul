@@ -157,3 +157,9 @@ At the end of every development session, update `NOTES.md` in the project root w
 
 Example:
 > *Left off wiring widget config saves to SQLite. Next: test that config persists across a server restart.*
+
+## Running
+
+```
+docker compose up --build
+```
