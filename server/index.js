@@ -7,7 +7,7 @@ app.get('/health', (req, res) => {
 })
 
 app.get('/', (req, res) => {
-    res.json({ body: 'hello world', nipun: 'bum' })
+    res.json({ body: 'hello world' })
 })
 
 app.listen(3001, () => console.log('Server running on port 3001: http://localhost:3001'))

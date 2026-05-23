@@ -1,0 +1,5 @@
+$kind: http-request
+name: Root
+method: GET
+url: 'http://localhost:3001/'
+order: 2000
