@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 3001
 
-CMD ["npx", "nodemon", "--exec", "npx ts-node src/index.ts", "--ext", "ts"]
+CMD ["npx", "nodemon", "--legacy-watch", "--exec", "npx ts-node src/index.ts", "--ext", "ts"]

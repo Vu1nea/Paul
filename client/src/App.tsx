@@ -1,121 +1,97 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useState, useEffect } from 'react'
+import ReactGridLayout, { useContainerWidth, useResponsiveLayout } from 'react-grid-layout'
+import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
 import './App.css'
+import { PlaceholderWidget, WeatherWidget } from './widgets'
+import type { WeatherConfig, WeatherData } from './widgets'
+
+const STORAGE_KEY = 'paul-layout'
+
+const defaultLayouts = {
+  lg: [
+    { i: 'placeholder-1', x: 0, y: 0, w: 4, h: 3 },
+    { i: 'placeholder-2', x: 4, y: 0, w: 4, h: 3 },
+    { i: 'weather-1', x: 8, y: 0, w: 4, h: 3 },
+  ],
+}
+
+const weatherConfig: WeatherConfig = {
+  city: 'Montreal',
+  latitude: 45.5017,
+  longitude: -73.5673,
+  units: 'metric',
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [serverStatus, setServerStatus] = useState<'checking' | 'connected' | 'unreachable'>('checking')
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
+
+  const apiUrl = import.meta.env.VITE_API_URL as string
+
+  const { width, containerRef, mounted } = useContainerWidth()
+
+  const { layout, cols } = useResponsiveLayout({
+    width,
+    breakpoints: { lg: 1200 },
+    cols: { lg: 12 },
+    layouts: (() => {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : defaultLayouts
+    })(),
+    onLayoutChange: (_layout, allLayouts) => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allLayouts))
+    },
+  })
+
+  useEffect(() => {
+    fetch(`${apiUrl}/health`)
+      .then(res => res.json())
+      .then(() => setServerStatus('connected'))
+      .catch(() => setServerStatus('unreachable'))
+  }, [apiUrl])
+
+  useEffect(() => {
+    fetch(
+      `${apiUrl}/api/weather?latitude=${weatherConfig.latitude}&longitude=${weatherConfig.longitude}&units=${weatherConfig.units}`
+    )
+      .then(res => res.json())
+      .then(data => setWeatherData(data as WeatherData))
+      .catch(() => setWeatherData(null))
+  }, [apiUrl])
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <div className="app">
+      <header className="app-header">
+        <h1>Paul</h1>
+        <span className={`server-status ${serverStatus}`}>
+          {serverStatus === 'connected'
+            ? 'Server connected'
+            : serverStatus === 'unreachable'
+              ? 'Server unreachable'
+              : 'Checking...'}
+        </span>
+      </header>
+      <main ref={containerRef}>
+        {mounted && (
+          <ReactGridLayout
+            width={width}
+            layout={layout}
+            gridConfig={{ cols, rowHeight: 100 }}
+          >
+            <div key="placeholder-1" className="widget">
+              <PlaceholderWidget config={{ label: 'Widget 1' }} data={{}} />
+            </div>
+            <div key="placeholder-2" className="widget">
+              <PlaceholderWidget config={{ label: 'Widget 2' }} data={{}} />
+            </div>
+            <div key="weather-1" className="widget">
+              <WeatherWidget config={weatherConfig} data={weatherData} />
+            </div>
+          </ReactGridLayout>
+        )}
+      </main>
+    </div>
   )
 }
 
