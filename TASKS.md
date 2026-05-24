@@ -293,7 +293,7 @@ CREATE TABLE IF NOT EXISTS widgets (
   5. Closes the widget type picker
 
 **Default configs by widget type:**
-- Weather: `{ latitude: 45.5017, longitude: -73.5673, units: "imperial" }`
+- Weather: `{ city: "Montreal", latitude: 45.5017, longitude: -73.5673, units: "imperial" }`
 - Placeholder: `{}`
 
 **Remove widget requirements:**
