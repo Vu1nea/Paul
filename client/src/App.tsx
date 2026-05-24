@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ReactGridLayout, { useContainerWidth, useResponsiveLayout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import './App.css'
 import { PlaceholderWidget, WeatherWidget } from './widgets'
 import type { WeatherConfig, WeatherData } from './widgets'
-
-const STORAGE_KEY = 'paul-layout'
 
 const defaultLayouts = {
   lg: [
@@ -24,23 +22,30 @@ const weatherConfig: WeatherConfig = {
 }
 
 function App() {
+  const apiUrl = import.meta.env.VITE_API_URL as string
+
   const [serverStatus, setServerStatus] = useState<'checking' | 'connected' | 'unreachable'>('checking')
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
+  const [initialLayouts, setInitialLayouts] = useState<typeof defaultLayouts | null>(null)
 
-  const apiUrl = import.meta.env.VITE_API_URL as string
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { width, containerRef, mounted } = useContainerWidth()
 
-  const { layout, cols } = useResponsiveLayout({
+  const { layout, cols, setLayouts, setLayoutForBreakpoint, breakpoint } = useResponsiveLayout({
     width,
     breakpoints: { lg: 1200 },
     cols: { lg: 12 },
-    layouts: (() => {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ? JSON.parse(saved) : defaultLayouts
-    })(),
+    layouts: initialLayouts ?? defaultLayouts,
     onLayoutChange: (_layout, allLayouts) => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(allLayouts))
+      if (saveTimeout.current) clearTimeout(saveTimeout.current)
+      saveTimeout.current = setTimeout(() => {
+        fetch(`${apiUrl}/api/layout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(allLayouts),
+        })
+      }, 1000)
     },
   })
 
@@ -49,6 +54,18 @@ function App() {
       .then(res => res.json())
       .then(() => setServerStatus('connected'))
       .catch(() => setServerStatus('unreachable'))
+  }, [apiUrl])
+
+  useEffect(() => {
+    fetch(`${apiUrl}/api/layout`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          setInitialLayouts(data)
+          setLayouts(data)
+        }
+      })
+      .catch(() => {})
   }, [apiUrl])
 
   useEffect(() => {
@@ -78,6 +95,7 @@ function App() {
             width={width}
             layout={layout}
             gridConfig={{ cols, rowHeight: 100 }}
+            onLayoutChange={(newLayout) => setLayoutForBreakpoint(breakpoint, newLayout)}
           >
             <div key="placeholder-1" className="widget">
               <PlaceholderWidget config={{ label: 'Widget 1' }} data={{}} />

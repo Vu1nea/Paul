@@ -1,0 +1,5 @@
+$kind: http-request
+name: Weather
+url: http://localhost:3001/api/weather
+method: GET
+order: 1779655113579

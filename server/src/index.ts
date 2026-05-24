@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
+import db from './db'
 
 const app = express()
 
@@ -8,6 +9,16 @@ app.use(express.json())
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' })
+})
+
+app.get('/api/layout', (req: Request, res: Response) => {
+  const row = db.prepare('SELECT layout_json FROM layouts WHERE id = ?').get('main') as { layout_json: string } | undefined
+  res.json(row ? JSON.parse(row.layout_json) : null)
+})
+
+app.post('/api/layout', (req: Request, res: Response) => {
+  db.prepare('INSERT OR REPLACE INTO layouts (id, layout_json) VALUES (?, ?)').run('main', JSON.stringify(req.body))
+  res.json({ ok: true })
 })
 
 app.get('/api/weather', async (req: Request, res: Response) => {
@@ -34,4 +45,4 @@ app.get('/api/weather', async (req: Request, res: Response) => {
   }
 })
 
-app.listen(3001, () => console.log('Server running on port 3001'))
+app.listen(3001, () => console.log('Server running on port 3001: http://localhost:3001'))
