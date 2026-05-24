@@ -12,12 +12,35 @@ app.get('/health', (req: Request, res: Response) => {
 })
 
 app.get('/api/layout', (req: Request, res: Response) => {
-  const row = db.prepare('SELECT layout_json FROM layouts WHERE id = ?').get('main') as { layout_json: string } | undefined
-  res.json(row ? JSON.parse(row.layout_json) : null)
+  const layoutRow = db.prepare('SELECT layout_json FROM layouts WHERE id = ?').get('main') as { layout_json: string } | undefined
+  const widgetRows = db.prepare('SELECT id, type, config_json FROM widgets').all() as { id: string; type: string; config_json: string }[]
+
+  const configs: Record<string, { type: string; config: unknown }> = {}
+  for (const row of widgetRows) {
+    configs[row.id] = { type: row.type, config: JSON.parse(row.config_json) }
+  }
+
+  res.json({
+    layout: layoutRow ? JSON.parse(layoutRow.layout_json) : null,
+    configs,
+  })
 })
 
 app.post('/api/layout', (req: Request, res: Response) => {
-  db.prepare('INSERT OR REPLACE INTO layouts (id, layout_json) VALUES (?, ?)').run('main', JSON.stringify(req.body))
+  const { layout, configs } = req.body as {
+    layout: unknown
+    configs?: Record<string, { type: string; config: unknown }>
+  }
+
+  db.prepare('INSERT OR REPLACE INTO layouts (id, layout_json) VALUES (?, ?)').run('main', JSON.stringify(layout))
+
+  if (configs) {
+    const stmt = db.prepare('INSERT OR REPLACE INTO widgets (id, type, config_json) VALUES (?, ?, ?)')
+    for (const [id, { type, config }] of Object.entries(configs)) {
+      stmt.run(id, type, JSON.stringify(config))
+    }
+  }
+
   res.json({ ok: true })
 })
 

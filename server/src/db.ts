@@ -7,7 +7,12 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS layouts (
     id   TEXT PRIMARY KEY,
     layout_json TEXT NOT NULL
-  )
+  );
+  CREATE TABLE IF NOT EXISTS widgets (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    config_json TEXT NOT NULL
+  );
 `)
 
 export default db

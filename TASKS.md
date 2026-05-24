@@ -199,6 +199,7 @@ CREATE TABLE widgets (
 - Pressing Escape should close the modal
 - Do not use any external component library — plain HTML and CSS only
 - Update `GET /api/layout` and `POST /api/layout` to also return/save widget configs alongside the grid layout
+- The Weather widget's config form uses a city search backed by the Open-Meteo geocoding API (`https://geocoding-api.open-meteo.com/v1/search`) — results are shown in a dropdown with region and country to disambiguate duplicates (e.g. "London, England, United Kingdom" vs "London, Ontario, Canada"); selecting a result automatically populates `latitude` and `longitude` — these fields are not shown as manual inputs
 
 ---
 

@@ -39,8 +39,134 @@
 }
 
 .widget {
+  position: relative;
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
   overflow: hidden;
+}
+
+.widget-gear {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+  color: #555;
+}
+
+.widget:hover .widget-gear {
+  opacity: 1;
+}
+
+/* Modal */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 6px;
+  padding: 24px;
+  min-width: 320px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.modal-title {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.modal-body {
+  margin-bottom: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-btn {
+  padding: 6px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  background: #fff;
+}
+
+.modal-btn-primary {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+/* Config form */
+
+.config-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.config-form input,
+.config-form select {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.city-search {
+  position: relative;
+}
+
+.city-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  z-index: 1100;
+  max-height: 180px;
+  overflow-y: auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.city-results li {
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.city-results li:hover {
+  background: #f5f5f5;
 }
