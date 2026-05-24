@@ -45,7 +45,7 @@ app.post('/api/layout', (req: Request, res: Response) => {
 })
 
 app.get('/api/weather', async (req: Request, res: Response) => {
-  const { latitude, longitude, units = 'metric' } = req.query
+  const { latitude, longitude, units = 'imperial' } = req.query
 
   const tempUnit = units === 'imperial' ? 'fahrenheit' : 'celsius'
   const windUnit = units === 'imperial' ? 'mph' : 'kmh'

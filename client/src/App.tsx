@@ -21,7 +21,7 @@ const defaultLayouts = {
 const defaultWidgetConfigs: WidgetConfigs = {
   'placeholder-1': { type: 'placeholder', config: { label: 'Widget 1' } },
   'placeholder-2': { type: 'placeholder', config: { label: 'Widget 2' } },
-  'weather-1': { type: 'weather', config: { city: 'Montreal', latitude: 45.5017, longitude: -73.5673, units: 'metric' } },
+  'weather-1': { type: 'weather', config: { city: 'Montreal', latitude: 45.5017, longitude: -73.5673, units: 'imperial' } },
 }
 
 function App() {
