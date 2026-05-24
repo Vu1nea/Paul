@@ -21,8 +21,8 @@ export default function WidgetConfigModal({ isOpen, onClose, onSave, title, chil
   if (!isOpen) return null
 
   return createPortal(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }} role='dialog'>
+      <div className="modal">
         <h2 className="modal-title">{title}</h2>
         <div className="modal-body">{children}</div>
         <div className="modal-footer">

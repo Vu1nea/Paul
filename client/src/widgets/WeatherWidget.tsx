@@ -37,8 +37,9 @@ const weatherDescriptions: Record<number, string> = {
   99: 'Thunderstorm with heavy hail',
 }
 
-export function WeatherWidget({ config, data }: WidgetProps<WeatherConfig, WeatherData>) {
-  if (!data) return <div style={{ padding: '8px' }}>Loading weather...</div>
+export function WeatherWidget({ config, data }: WidgetProps<WeatherConfig, WeatherData | { error: true }>) {
+  if (!data) return <div style={{ padding: '8px' }}>Loading...</div>
+  if ('error' in data) return <div style={{ padding: '8px', color: 'red' }}>Failed to load weather</div>
 
   const tempUnit = config.units === 'imperial' ? '°F' : '°C'
   const windUnit = config.units === 'imperial' ? 'mph' : 'km/h'

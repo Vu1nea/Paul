@@ -29,8 +29,9 @@ function App() {
   const apiUrl = import.meta.env.VITE_API_URL as string
 
   const [serverStatus, setServerStatus] = useState<'checking' | 'connected' | 'unreachable'>('checking')
-  const [weatherDataMap, setWeatherDataMap] = useState<Record<string, WeatherData | null>>({})
+  const [weatherDataMap, setWeatherDataMap] = useState<Record<string, WeatherData | { error: true } | null>>({})
   const [initialLayouts, setInitialLayouts] = useState<typeof defaultLayouts | null>(null)
+  const [layoutLoaded, setLayoutLoaded] = useState(false)
   const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfigs>(defaultWidgetConfigs)
   const [openModalId, setOpenModalId] = useState<string | null>(null)
   const [draftConfig, setDraftConfig] = useState<Record<string, unknown>>({})
@@ -89,6 +90,7 @@ function App() {
         }
       })
       .catch(() => {})
+      .finally(() => setLayoutLoaded(true))
   }, [apiUrl])
 
   useEffect(() => {
@@ -99,7 +101,7 @@ function App() {
       fetch(`${apiUrl}/api/weather?latitude=${latitude}&longitude=${longitude}&units=${units ?? 'metric'}`)
         .then(res => res.json())
         .then(data => setWeatherDataMap(prev => ({ ...prev, [id]: data as WeatherData })))
-        .catch(() => {})
+        .catch(() => setWeatherDataMap(prev => ({ ...prev, [id]: { error: true } })))
     }
   }, [apiUrl, weatherKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -191,7 +193,7 @@ function App() {
         </div>
       </header>
       <main ref={containerRef}>
-        {mounted && (
+        {mounted && layoutLoaded && (
           <ReactGridLayout
             width={width}
             layout={layout}
@@ -202,7 +204,7 @@ function App() {
             {layout.filter(item => item.i in widgetConfigs).map(item => {
               const entry = widgetConfigs[item.i]!
               return (
-                <div key={item.i} className="widget">
+                <div key={item.i} className="widget" data-widget-id={item.i}>
                   {entry.type === 'weather' ? (
                     <WeatherWidget
                       config={entry.config as unknown as WeatherConfig}
@@ -211,8 +213,8 @@ function App() {
                   ) : (
                     <PlaceholderWidget config={entry.config as { label: string }} data={{}} />
                   )}
-                  <button className="widget-gear" onClick={e => handleGearClick(item.i, e)}>⚙</button>
-                  <button className="widget-remove" onClick={e => handleRemoveWidget(item.i, e)}>×</button>
+                  <button className="widget-gear" onClick={e => handleGearClick(item.i, e)} onMouseDown={e => e.stopPropagation()}>⚙</button>
+                  <button className="widget-remove" onClick={e => handleRemoveWidget(item.i, e)} onMouseDown={e => e.stopPropagation()}>×</button>
                 </div>
               )
             })}
