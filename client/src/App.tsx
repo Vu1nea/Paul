@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import ReactGridLayout, { useContainerWidth, useResponsiveLayout } from 'react-grid-layout'
+import type { LayoutItem } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import './App.css'
@@ -28,11 +29,12 @@ function App() {
   const apiUrl = import.meta.env.VITE_API_URL as string
 
   const [serverStatus, setServerStatus] = useState<'checking' | 'connected' | 'unreachable'>('checking')
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
+  const [weatherDataMap, setWeatherDataMap] = useState<Record<string, WeatherData | null>>({})
   const [initialLayouts, setInitialLayouts] = useState<typeof defaultLayouts | null>(null)
   const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfigs>(defaultWidgetConfigs)
   const [openModalId, setOpenModalId] = useState<string | null>(null)
   const [draftConfig, setDraftConfig] = useState<Record<string, unknown>>({})
+  const [showAddPanel, setShowAddPanel] = useState(false)
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const widgetConfigsRef = useRef(widgetConfigs)
@@ -57,7 +59,15 @@ function App() {
     },
   })
 
-  const weatherConfig = (widgetConfigs['weather-1']?.config ?? defaultWidgetConfigs['weather-1'].config) as unknown as WeatherConfig
+  // Stable key that changes only when weather widget inputs change
+  const weatherKey = Object.entries(widgetConfigs)
+    .filter(([, w]) => w.type === 'weather')
+    .map(([id, { config }]) => {
+      const c = config as unknown as WeatherConfig
+      return `${id}:${c.latitude}:${c.longitude}:${c.units}`
+    })
+    .sort()
+    .join('|')
 
   useEffect(() => {
     fetch(`${apiUrl}/health`)
@@ -82,14 +92,16 @@ function App() {
   }, [apiUrl])
 
   useEffect(() => {
-    setWeatherData(null)
-    fetch(
-      `${apiUrl}/api/weather?latitude=${weatherConfig.latitude}&longitude=${weatherConfig.longitude}&units=${weatherConfig.units}`
-    )
-      .then(res => res.json())
-      .then(data => setWeatherData(data as WeatherData))
-      .catch(() => setWeatherData(null))
-  }, [apiUrl, weatherConfig.latitude, weatherConfig.longitude, weatherConfig.units])
+    const weatherWidgets = Object.entries(widgetConfigsRef.current).filter(([, w]) => w.type === 'weather')
+    for (const [id, { config }] of weatherWidgets) {
+      const { latitude, longitude, units } = config as unknown as WeatherConfig
+      setWeatherDataMap(prev => ({ ...prev, [id]: null }))
+      fetch(`${apiUrl}/api/weather?latitude=${latitude}&longitude=${longitude}&units=${units ?? 'metric'}`)
+        .then(res => res.json())
+        .then(data => setWeatherDataMap(prev => ({ ...prev, [id]: data as WeatherData })))
+        .catch(() => {})
+    }
+  }, [apiUrl, weatherKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleGearClick(id: string, e: React.MouseEvent) {
     e.stopPropagation()
@@ -112,6 +124,49 @@ function App() {
     setOpenModalId(null)
   }
 
+  function handleAddWidget(type: 'placeholder' | 'weather') {
+    const id = crypto.randomUUID()
+    const bottomY = layout.reduce((max, item) => Math.max(max, item.y + item.h), 0)
+    const newItem: LayoutItem = { i: id, x: 0, y: bottomY, w: 4, h: 3 }
+    const defaultConfig = type === 'weather'
+      ? { city: 'Montreal', latitude: 45.5017, longitude: -73.5673, units: 'metric' }
+      : { label: 'New Widget' }
+
+    const newLayout = [...layout, newItem]
+    setLayoutForBreakpoint(breakpoint, newLayout)
+
+    const updatedConfigs: WidgetConfigs = {
+      ...widgetConfigs,
+      [id]: { type, config: defaultConfig },
+    }
+    setWidgetConfigs(updatedConfigs)
+    setShowAddPanel(false)
+
+    fetch(`${apiUrl}/api/layout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ layout: { lg: newLayout }, configs: updatedConfigs }),
+    })
+  }
+
+  function handleRemoveWidget(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!window.confirm('Remove this widget?')) return
+
+    const newLayout = layout.filter(item => item.i !== id)
+    setLayoutForBreakpoint(breakpoint, newLayout)
+
+    const updatedConfigs = { ...widgetConfigs }
+    delete updatedConfigs[id]
+    setWidgetConfigs(updatedConfigs)
+
+    fetch(`${apiUrl}/api/layout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ layout: { lg: newLayout }, configs: updatedConfigs }),
+    })
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -123,6 +178,17 @@ function App() {
               ? 'Server unreachable'
               : 'Checking...'}
         </span>
+        <div className="add-widget-wrap">
+          <button className="add-widget-btn" onClick={() => setShowAddPanel(p => !p)}>
+            + Add Widget
+          </button>
+          {showAddPanel && (
+            <div className="add-widget-panel">
+              <button onClick={() => handleAddWidget('placeholder')}>Placeholder</button>
+              <button onClick={() => handleAddWidget('weather')}>Weather</button>
+            </div>
+          )}
+        </div>
       </header>
       <main ref={containerRef}>
         {mounted && (
@@ -131,20 +197,25 @@ function App() {
             layout={layout}
             gridConfig={{ cols, rowHeight: 100 }}
             onLayoutChange={(newLayout) => setLayoutForBreakpoint(breakpoint, newLayout)}
-            dragConfig={{ cancel: '.widget-gear' }}
+            dragConfig={{ cancel: '.widget-gear, .widget-remove' }}
           >
-            <div key="placeholder-1" className="widget">
-              <PlaceholderWidget config={widgetConfigs['placeholder-1']?.config as { label: string }} data={{}} />
-              <button className="widget-gear" onClick={(e) => handleGearClick('placeholder-1', e)}>⚙</button>
-            </div>
-            <div key="placeholder-2" className="widget">
-              <PlaceholderWidget config={widgetConfigs['placeholder-2']?.config as { label: string }} data={{}} />
-              <button className="widget-gear" onClick={(e) => handleGearClick('placeholder-2', e)}>⚙</button>
-            </div>
-            <div key="weather-1" className="widget">
-              <WeatherWidget config={weatherConfig} data={weatherData} />
-              <button className="widget-gear" onClick={(e) => handleGearClick('weather-1', e)}>⚙</button>
-            </div>
+            {layout.filter(item => item.i in widgetConfigs).map(item => {
+              const entry = widgetConfigs[item.i]!
+              return (
+                <div key={item.i} className="widget">
+                  {entry.type === 'weather' ? (
+                    <WeatherWidget
+                      config={entry.config as unknown as WeatherConfig}
+                      data={weatherDataMap[item.i] ?? null}
+                    />
+                  ) : (
+                    <PlaceholderWidget config={entry.config as { label: string }} data={{}} />
+                  )}
+                  <button className="widget-gear" onClick={e => handleGearClick(item.i, e)}>⚙</button>
+                  <button className="widget-remove" onClick={e => handleRemoveWidget(item.i, e)}>×</button>
+                </div>
+              )
+            })}
           </ReactGridLayout>
         )}
       </main>

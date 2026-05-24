@@ -35,10 +35,15 @@ app.post('/api/layout', (req: Request, res: Response) => {
   db.prepare('INSERT OR REPLACE INTO layouts (id, layout_json) VALUES (?, ?)').run('main', JSON.stringify(layout))
 
   if (configs) {
-    const stmt = db.prepare('INSERT OR REPLACE INTO widgets (id, type, config_json) VALUES (?, ?, ?)')
-    for (const [id, { type, config }] of Object.entries(configs)) {
-      stmt.run(id, type, JSON.stringify(config))
-    }
+    const deleteAll = db.prepare('DELETE FROM widgets')
+    const insert = db.prepare('INSERT INTO widgets (id, type, config_json) VALUES (?, ?, ?)')
+    const saveWidgets = db.transaction((entries: [string, { type: string; config: unknown }][]) => {
+      deleteAll.run()
+      for (const [id, { type, config }] of entries) {
+        insert.run(id, type, JSON.stringify(config))
+      }
+    })
+    saveWidgets(Object.entries(configs))
   }
 
   res.json({ ok: true })
