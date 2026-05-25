@@ -40,6 +40,8 @@ function App() {
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const widgetConfigsRef = useRef(widgetConfigs)
   widgetConfigsRef.current = widgetConfigs
+  const layoutLoadedRef = useRef(false)
+  layoutLoadedRef.current = layoutLoaded
 
   const { width, containerRef, mounted } = useContainerWidth()
 
@@ -49,6 +51,7 @@ function App() {
     cols: { lg: 12 },
     layouts: initialLayouts ?? defaultLayouts,
     onLayoutChange: (_layout, allLayouts) => {
+      if (!layoutLoadedRef.current) return
       if (saveTimeout.current) clearTimeout(saveTimeout.current)
       saveTimeout.current = setTimeout(() => {
         fetch(`${apiUrl}/api/layout`, {
@@ -81,7 +84,7 @@ function App() {
     fetch(`${apiUrl}/api/layout`)
       .then(res => res.json())
       .then(data => {
-        if (data?.layout) {
+        if (data?.layout?.lg && Array.isArray(data.layout.lg)) {
           setInitialLayouts(data.layout)
           setLayouts(data.layout)
         }
