@@ -1,3 +1,9 @@
+import vm from 'vm'
+import * as cron from 'node-cron'
+import type { ScheduledTask } from 'node-cron'
+import db from './db'
+import { decryptValue } from './secrets'
+
 export interface DataSource {
   id: string
   name: string
@@ -5,14 +11,47 @@ export interface DataSource {
   schedule: string
 }
 
-export async function runScript(_source: DataSource): Promise<void> {
-  // stub — implemented in Task 6
+const activeJobs = new Map<string, ScheduledTask>()
+
+export async function runScript(source: DataSource): Promise<void> {
+  const wrappedScript = `(async () => { ${source.script} })()`
+  const getSecret = (key: string): string => {
+    const row = db.prepare('SELECT encrypted_value FROM secrets WHERE key = ?').get(key) as { encrypted_value: string } | undefined
+    if (!row) throw new Error('Secret not found: ' + key)
+    return decryptValue(row.encrypted_value)
+  }
+  const sandbox = { fetch, console, getSecret, Promise }
+
+  try {
+    const result = await vm.runInNewContext(wrappedScript, sandbox, { timeout: 10000 })
+    db.prepare('UPDATE data_sources SET last_output = ?, last_run_at = ? WHERE id = ?')
+      .run(JSON.stringify(result), new Date().toISOString(), source.id)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    db.prepare('UPDATE data_sources SET last_output = ?, last_run_at = ? WHERE id = ?')
+      .run(JSON.stringify({ error: message }), new Date().toISOString(), source.id)
+  }
 }
 
-export function registerCronJob(_source: DataSource): void {
-  // stub — implemented in Task 6
+export function startAllCronJobs(): void {
+  const sources = db.prepare('SELECT id, name, script, schedule FROM data_sources').all() as DataSource[]
+  for (const source of sources) {
+    registerCronJob(source)
+  }
 }
 
-export function stopCronJob(_id: string): void {
-  // stub — implemented in Task 6
+export function registerCronJob(source: DataSource): void {
+  stopCronJob(source.id)
+  if (cron.validate(source.schedule)) {
+    const task = cron.schedule(source.schedule, () => { runScript(source) })
+    activeJobs.set(source.id, task)
+  }
+}
+
+export function stopCronJob(id: string): void {
+  const task = activeJobs.get(id)
+  if (task) {
+    task.stop()
+    activeJobs.delete(id)
+  }
 }
