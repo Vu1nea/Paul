@@ -1,4 +1,4 @@
-import { generateScript } from '../pipeline'
+import { generateScript, substituteVariables } from '../pipeline'
 import type { Pipeline } from '../pipeline'
 
 describe('generateScript', () => {
@@ -123,6 +123,23 @@ describe('generateScript', () => {
     expect(script).toContain('profit: step_1?.revenue - step_1?.cost')
   })
 
+  it('generates apikey auth header using getSecret', () => {
+    const pipeline: Pipeline = {
+      steps: [
+        {
+          type: 'fetch', id: 'step_1', label: 'Data',
+          connector_id: null, url: 'https://api.example.com',
+          method: 'GET', headers: [], body: null,
+          auth: { type: 'apikey', secret: 'MY_KEY' }, variables: {},
+        },
+        { type: 'output', id: 'step_2', label: 'Out', sourceId: 'step_1', mappings: [] },
+      ],
+    }
+    const script = generateScript(pipeline)
+    expect(script).toContain("X-API-Key")
+    expect(script).toContain("getSecret('MY_KEY')")
+  })
+
   it('wraps the whole script correctly', () => {
     const pipeline: Pipeline = {
       steps: [
@@ -137,5 +154,17 @@ describe('generateScript', () => {
     const script = generateScript(pipeline)
     expect(script.trimStart()).toMatch(/^const step_1/)
     expect(script.trimEnd()).toMatch(/return \{[\s\S]*\}$/)
+  })
+})
+
+describe('substituteVariables', () => {
+  it('substitutes known variables', () => {
+    expect(substituteVariables('https://api.example.com/{lat}/{lon}', { lat: '45.5', lon: '-73.5' }))
+      .toBe('https://api.example.com/45.5/-73.5')
+  })
+
+  it('leaves unknown variables as-is', () => {
+    expect(substituteVariables('https://api.example.com/{unknown}', {}))
+      .toBe('https://api.example.com/{unknown}')
   })
 })

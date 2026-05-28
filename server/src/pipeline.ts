@@ -98,13 +98,18 @@ function operandExpr(sourceId: string, operand: string | number): string {
   return dotAccessor(sourceId, operand)
 }
 
+function escapeSingleQuoted(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+}
+
 function generateFetchStep(step: FetchStep): string {
   const url = step.url ?? ''
+  const safeUrl = url.replace(/\$\{/g, '\\${')
   const method = step.method ?? 'GET'
 
   const headerLines: string[] = []
   for (const h of step.headers) {
-    headerLines.push("      '" + h.key + "': '" + h.value + "'")
+    headerLines.push("      '" + escapeSingleQuoted(h.key) + "': '" + escapeSingleQuoted(h.value) + "'")
   }
   if (step.auth?.type === 'bearer') {
     headerLines.push("      'Authorization': `Bearer ${getSecret('" + step.auth.secret + "')}`")
@@ -122,7 +127,7 @@ function generateFetchStep(step: FetchStep): string {
 
   return (
     'const ' + step.id + ' = await fetch(\n' +
-    '  `' + url + '`,\n' +
+    '  `' + safeUrl + '`,\n' +
     '  {\n' +
     optionParts.join(',\n') + '\n' +
     '  }\n' +
