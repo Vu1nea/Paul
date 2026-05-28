@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express'
+import { randomUUID } from 'crypto'
 import db from '../db'
 
 export const BUILTIN_CONNECTORS = [
@@ -46,7 +47,7 @@ router.post('/', (req: Request, res: Response) => {
     body_template?: string
     variables_json?: string
   }
-  const id = crypto.randomUUID()
+  const id = randomUUID()
   db.prepare(`
     INSERT INTO connectors (id, name, description, url_template, method, headers_json, body_template, variables_json, is_builtin)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
