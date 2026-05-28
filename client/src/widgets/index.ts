@@ -1,4 +1,4 @@
-export { WidgetProps } from './WidgetBase'
+export type { WidgetProps } from './WidgetBase'
 export { PlaceholderWidget } from './PlaceholderWidget'
 export { WeatherWidget } from './WeatherWidget'
 export type { WeatherConfig, WeatherData } from './WeatherWidget'
