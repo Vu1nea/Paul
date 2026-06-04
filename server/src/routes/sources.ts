@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto'
 import db from '../db'
 import { buildScriptFromJson } from '../pipeline'
 import type { ConnectorRow } from '../pipeline'
-import { registerCronJob, runScript, stopCronJob } from '../runner'
+import { registerCronJob, runScript, stopCronJob } from '../services/runner'
 
 const router = Router()
 

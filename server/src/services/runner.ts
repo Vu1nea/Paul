@@ -1,15 +1,9 @@
 import vm from 'vm'
 import * as cron from 'node-cron'
 import type { ScheduledTask } from 'node-cron'
-import db from './db'
-import { decryptValue } from './secrets'
-
-export interface DataSource {
-  id: string
-  name: string
-  script: string
-  schedule: string
-}
+import db from '../db'
+import { decryptValue } from './encryption'
+import type { DataSource } from '../types'
 
 const activeJobs = new Map<string, ScheduledTask>()
 

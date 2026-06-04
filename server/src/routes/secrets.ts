@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import db from '../db'
-import { encryptValue } from '../secrets'
+import { encryptValue } from '../services/encryption'
 
 const router = Router()
 

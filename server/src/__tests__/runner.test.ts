@@ -1,4 +1,4 @@
-import { runScript } from '../runner'
+import { runScript } from '../services/runner'
 import Database from 'better-sqlite3'
 
 // Use an in-memory DB for runner tests

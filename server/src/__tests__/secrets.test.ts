@@ -6,7 +6,7 @@ describe('secrets encryption', () => {
   it('encrypt and decrypt round-trips correctly', () => {
     // Re-require after env var is set
     jest.resetModules()
-    const { encryptValue, decryptValue } = require('../secrets')
+    const { encryptValue, decryptValue } = require('../services/encryption')
     const original = 'my-api-key-value'
     const encrypted = encryptValue(original)
     expect(encrypted).not.toBe(original)
@@ -16,7 +16,7 @@ describe('secrets encryption', () => {
 
   it('produces different ciphertext each time (random IV)', () => {
     jest.resetModules()
-    const { encryptValue } = require('../secrets')
+    const { encryptValue } = require('../services/encryption')
     const a = encryptValue('same value')
     const b = encryptValue('same value')
     expect(a).not.toBe(b)
