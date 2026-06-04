@@ -23,7 +23,9 @@ export async function runScript(source: DataSource): Promise<void> {
   const sandbox = { fetch, console, getSecret, Promise }
 
   try {
+    console.log(`wrapped script: ${wrappedScript}`)
     const result = await vm.runInNewContext(wrappedScript, sandbox, { timeout: 10000 })
+    console.log(`result: ${result}`)
     db.prepare('UPDATE data_sources SET last_output = ?, last_run_at = ? WHERE id = ?')
       .run(JSON.stringify(result), new Date().toISOString(), source.id)
   } catch (err) {

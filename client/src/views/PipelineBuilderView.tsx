@@ -51,6 +51,7 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
   const [output, setOutput] = useState<unknown>(null)
   const [running, setRunning] = useState(false)
   const [savedMsg, setSavedMsg] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   useEffect(() => {
     fetch(`${apiUrl}/api/sources/${sourceId}`).then(r => r.json()).then((data: { name: string; schedule: string; script: string; pipeline_json: string | null }) => {
@@ -64,6 +65,7 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
 
   function updateStep(id: string, patch: Partial<AnyStep>) {
     setSteps(prev => prev.map(s => s.id === id ? { ...s, ...patch } as AnyStep : s))
+    setHasUnsavedChanges(true)
   }
 
   function moveStep(idx: number, dir: -1 | 1) {
@@ -74,6 +76,7 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
       arr[idx + dir] = tmp
       return arr
     })
+    setHasUnsavedChanges(true)
   }
 
   async function handleSave() {
@@ -86,15 +89,19 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
     if (res.ok) {
       const updated = await fetch(`${apiUrl}/api/sources/${sourceId}`).then(r => r.json()) as { script: string }
       setGeneratedScript(updated.script)
+      setHasUnsavedChanges(false)
       setSavedMsg(true)
       setTimeout(() => setSavedMsg(false), 2000)
     }
   }
 
   async function handleRun() {
+    console.log('sdlfjsdjkl')
     setRunning(true)
     const res = await fetch(`${apiUrl}/api/sources/${sourceId}/run`, { method: 'POST' })
     const data = await res.json() as { output: unknown }
+    console.log(`Output: ${data.output}`);
+    
     setOutput(data.output)
     setRunning(false)
   }
@@ -133,6 +140,7 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
     setSteps(prev => [...prev, step])
     setExpandedId(id)
     setShowAddPicker(false)
+    setHasUnsavedChanges(true)
   }
 
   function renderStepForm(step: AnyStep) {
@@ -193,7 +201,8 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
             </select></label>
             <label>Fields (dot-notation, one per line)
               <textarea value={step.fields.join('\n')} rows={4}
-                onChange={e => updateStep(step.id, { fields: e.target.value.split('\n').filter(Boolean) } as Partial<PickStepData>)} />
+                onChange={e => updateStep(step.id, { fields: e.target.value.split('\n') } as Partial<PickStepData>)}
+                onBlur={e => updateStep(step.id, { fields: e.target.value.split('\n').filter(Boolean) } as Partial<PickStepData>)} />
             </label>
           </div>
         )
@@ -292,10 +301,10 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
       </header>
       <main style={{ padding: '24px', maxWidth: '720px' }}>
         <label style={{ display: 'block', marginBottom: '8px' }}>
-          Name<input value={name} onChange={e => setName(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px' }} />
+          Name<input value={name} onChange={e => { setName(e.target.value); setHasUnsavedChanges(true) }} style={{ display: 'block', width: '100%', marginTop: '4px' }} />
         </label>
         <label style={{ display: 'block', marginBottom: '16px' }}>
-          Schedule (cron)<input value={schedule} onChange={e => setSchedule(e.target.value)} style={{ display: 'block', width: '100%', marginTop: '4px' }} />
+          Schedule (cron)<input value={schedule} onChange={e => { setSchedule(e.target.value); setHasUnsavedChanges(true) }} style={{ display: 'block', width: '100%', marginTop: '4px' }} />
         </label>
 
         <div style={{ marginBottom: '16px' }}>
@@ -309,7 +318,7 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
                   onChange={e => updateStep(step.id, { label: e.target.value })} />
                 <button onClick={e => { e.stopPropagation(); moveStep(idx, -1) }} disabled={idx === 0}>↑</button>
                 <button onClick={e => { e.stopPropagation(); moveStep(idx, 1) }} disabled={idx === steps.length - 1}>↓</button>
-                <button onClick={e => { e.stopPropagation(); setSteps(prev => prev.filter(s => s.id !== step.id)) }}>×</button>
+                <button onClick={e => { e.stopPropagation(); setSteps(prev => prev.filter(s => s.id !== step.id)); setHasUnsavedChanges(true) }}>×</button>
               </div>
               {expandedId === step.id && renderStepForm(step)}
             </div>
@@ -319,7 +328,7 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
         <div style={{ position: 'relative', marginBottom: '16px' }}>
           <button onClick={() => setShowAddPicker(p => !p)}>+ Add Step</button>
           {showAddPicker && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, background: '#222', border: '1px solid #444', borderRadius: '4px', padding: '8px', zIndex: 10, minWidth: '200px' }}>
+            <div style={{ position: 'absolute', top: '100%', left: 0, background: '#7a7a7a', border: '1px solid #444', borderRadius: '4px', padding: '8px', zIndex: 10, minWidth: '200px' }}>
               <div style={{ fontWeight: 500, marginBottom: '8px', padding: '4px 8px' }}>Step type</div>
               {(['pick', 'rename', 'merge', 'math', 'output'] as const).map(type => (
                 <button key={type} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', background: 'none', border: 'none' }}
@@ -337,15 +346,16 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-          <button onClick={handleRun} disabled={running}>{running ? 'Running...' : 'Run Now'}</button>
+          <button onClick={handleRun} disabled={running || hasUnsavedChanges} title={hasUnsavedChanges ? 'Save before running' : undefined}>{running ? 'Running...' : 'Run Now'}</button>
           <button onClick={handleSave}>Save</button>
           {savedMsg && <span style={{ color: '#4a4' }}>Saved</span>}
+          {hasUnsavedChanges && <span style={{ color: '#fa0', fontSize: '12px' }}>Unsaved changes</span>}
           <button onClick={() => setShowCode(p => !p)}>View Generated Code</button>
           <button onClick={handleDelete} style={{ marginLeft: 'auto', color: '#f44' }}>Delete</button>
         </div>
 
         {output !== null && (
-          <pre style={{ background: '#1a1a1a', padding: '12px', borderRadius: '4px', color: typeof output === 'object' && output !== null && 'error' in output ? '#f44' : 'inherit', marginBottom: '12px' }}>
+          <pre style={{ background: '#1a1a1a', padding: '12px', borderRadius: '4px', color: typeof output === 'object' && output !== null && 'error' in output ? '#f44' : 'white', marginBottom: '12px' }}>
             {JSON.stringify(output, null, 2)}
           </pre>
         )}

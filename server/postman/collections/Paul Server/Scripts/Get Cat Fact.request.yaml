@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Cat Fact
+url: http://localhost:3001/api/sources/e41337a7-82c1-4c48-95e6-72f3d4b54129
+method: GET
+order: 1780116673425

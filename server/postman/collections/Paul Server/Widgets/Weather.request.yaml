@@ -2,4 +2,7 @@ $kind: http-request
 name: Weather
 url: http://localhost:3001/api/weather
 method: GET
+body:
+  type: formdata
+  content: []
 order: 1779655113579

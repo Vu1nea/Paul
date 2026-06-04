@@ -28,10 +28,20 @@ const defaultWidgetConfigs: WidgetConfigs = {
   'weather-1': { type: 'weather', config: { city: 'Montreal', latitude: 45.5017, longitude: -73.5673, units: 'imperial' } },
 }
 
+function flattenKeys(obj: unknown, prefix = ''): string[] {
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return prefix ? [prefix] : []
+  return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) => {
+    const path = prefix ? `${prefix}.${k}` : k
+    if (typeof v === 'object' && v !== null && !Array.isArray(v)) return flattenKeys(v, path)
+    return [path]
+  })
+}
+
 function App() {
   const apiUrl = import.meta.env.VITE_API_URL as string
   const view = new URLSearchParams(window.location.search).get('view')
   const sourceId = new URLSearchParams(window.location.search).get('id')
+  
 
   const [weatherDataMap, setWeatherDataMap] = useState<Record<string, WeatherData | { error: true } | null>>({})
   const [scriptDataMap, setScriptDataMap] = useState<Record<string, Record<string, unknown> | null>>({})
@@ -41,6 +51,7 @@ function App() {
   const [openModalId, setOpenModalId] = useState<string | null>(null)
   const [draftConfig, setDraftConfig] = useState<Record<string, unknown>>({})
   const [showAddPanel, setShowAddPanel] = useState(false)
+  const [availableSources, setAvailableSources] = useState<{ id: string; name: string; last_output: unknown }[]>([])
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const widgetConfigsRef = useRef(widgetConfigs)
@@ -120,6 +131,12 @@ function App() {
     e.stopPropagation()
     setOpenModalId(id)
     setDraftConfig({ ...widgetConfigs[id]?.config })
+    if (widgetConfigs[id]?.type === 'script') {
+      fetch(`${apiUrl}/api/sources`)
+        .then(r => r.json())
+        .then((data: { id: string; name: string, last_output: unknown }[]) => setAvailableSources(data))
+        .catch(() => {})
+    }
   }
 
   function handleConfigSave() {
@@ -218,8 +235,32 @@ function App() {
             <WeatherConfigForm config={draftConfig} onChange={setDraftConfig} />
           ) : widgetConfigs[openModalId]?.type === 'script' ? (
             <div className="config-form">
-              <label>Source ID<input value={String(draftConfig.sourceId ?? '')} onChange={e => setDraftConfig(c => ({ ...c, sourceId: e.target.value }))} /></label>
-              <label>Display Key<input value={String(draftConfig.displayKey ?? '')} onChange={e => setDraftConfig(c => ({ ...c, displayKey: e.target.value }))} placeholder="e.g. weather.temp" /></label>
+              <label>Source
+                <select value={String(draftConfig.sourceId ?? '')} onChange={e => setDraftConfig(c => ({ ...c, sourceId: e.target.value, displayKey: '' }))}>
+                  <option value="">— select a source —</option>
+                  {availableSources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </label>
+              <label>Display Key
+                {(() => {
+                  const selectedId = String(draftConfig.sourceId ?? '')
+                  const src = availableSources.find(s => s.id === selectedId)
+                  const keys = src ? flattenKeys(src.last_output) : []
+                  if (!selectedId) return <select disabled><option>— pick a source first —</option></select>
+                  if (keys.length === 0) return (
+                    <span style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <select disabled><option>— no output yet —</option></select>
+                      <button type="button" onClick={() => fetch(`${apiUrl}/api/sources`).then(r => r.json()).then((data: { id: string; name: string; last_output: unknown }[]) => setAvailableSources(data)).catch(() => {})}>↻</button>
+                    </span>
+                  )
+                  return (
+                    <select value={String(draftConfig.displayKey ?? '')} onChange={e => setDraftConfig(c => ({ ...c, displayKey: e.target.value }))}>
+                      <option value="">— select a key —</option>
+                      {keys.map(k => <option key={k} value={k}>{k}</option>)}
+                    </select>
+                  )
+                })()}
+              </label>
               <label>Label<input value={String(draftConfig.label ?? '')} onChange={e => setDraftConfig(c => ({ ...c, label: e.target.value }))} /></label>
             </div>
           ) : (

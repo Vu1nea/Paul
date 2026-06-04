@@ -179,6 +179,7 @@ function generateOutputStep(step: OutputStep): string {
 
 export function generateScript(pipeline: Pipeline): string {
   const lines: string[] = []
+  const hasOutput = pipeline.steps.some(s => s.type === 'output')
   for (const step of pipeline.steps) {
     switch (step.type) {
       case 'fetch':  lines.push(generateFetchStep(step));  break
@@ -188,6 +189,10 @@ export function generateScript(pipeline: Pipeline): string {
       case 'math':   lines.push(generateMathStep(step));   break
       case 'output': lines.push(generateOutputStep(step)); break
     }
+  }
+  if (!hasOutput && pipeline.steps.length > 0) {
+    const lastStep = pipeline.steps[pipeline.steps.length - 1]
+    lines.push('return ' + lastStep.id)
   }
   return lines.join('\n')
 }

@@ -1,5 +1,8 @@
 $kind: http-request
 name: Health Check
 method: GET
-url: 'http://localhost:3001/health'
+url: http://localhost:3001/health
+body:
+  type: json
+  content: ""
 order: 1000
