@@ -6,6 +6,20 @@ import { generateMergeStep } from './steps/merge'
 import { generateMathStep } from './steps/math'
 import { generateOutputStep } from './steps/output'
 
+export function buildScriptFromJson(
+  pipelineJson: string,
+  getConnector: (id: string) => ConnectorRow | undefined
+): string {
+  const pipeline = JSON.parse(pipelineJson) as Pipeline
+  const resolvedSteps = pipeline.steps.map(step => {
+    if (step.type !== 'fetch' || !step.connector_id) return step
+    const connector = getConnector(step.connector_id)
+    if (!connector) return step
+    return resolveConnectorStep(step as FetchStep, connector)
+  })
+  return generateScript({ steps: resolvedSteps })
+}
+
 export function substituteVariables(template: string, variables: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, name) => variables[name] ?? `{${name}}`)
 }
