@@ -1,8 +1,5 @@
 import type { OutputStep } from '../types'
-
-function dotAccessor(stepId: string, path: string): string {
-  return [stepId, ...path.split('.')].join('?.')
-}
+import { dotAccessor } from '../utils'
 
 export function generateOutputStep(step: OutputStep): string {
   if (step.mappings.length === 0) {

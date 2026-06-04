@@ -1,8 +1,5 @@
 import type { RenameStep } from '../types'
-
-function dotAccessor(stepId: string, path: string): string {
-  return [stepId, ...path.split('.')].join('?.')
-}
+import { dotAccessor } from '../utils'
 
 export function generateRenameStep(step: RenameStep): string {
   const pairs = step.mappings

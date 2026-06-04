@@ -1,13 +1,5 @@
 import type { PickStep } from '../types'
-
-function dotAccessor(stepId: string, path: string): string {
-  return [stepId, ...path.split('.')].join('?.')
-}
-
-function leafKey(path: string): string {
-  const parts = path.split('.')
-  return parts[parts.length - 1]
-}
+import { dotAccessor, leafKey } from '../utils'
 
 export function generatePickStep(step: PickStep): string {
   const pairs = step.fields

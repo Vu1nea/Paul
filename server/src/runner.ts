@@ -22,16 +22,16 @@ export async function runScript(source: DataSource): Promise<void> {
   }
   const sandbox = { fetch, console, getSecret, Promise }
 
-  try {
-    console.log(`wrapped script: ${wrappedScript}`)
-    const result = await vm.runInNewContext(wrappedScript, sandbox, { timeout: 10000 })
-    console.log(`result: ${result}`)
+  const persistOutput = (data: unknown) =>
     db.prepare('UPDATE data_sources SET last_output = ?, last_run_at = ? WHERE id = ?')
-      .run(JSON.stringify(result), new Date().toISOString(), source.id)
+      .run(JSON.stringify(data), new Date().toISOString(), source.id)
+
+  try {
+    const result = await vm.runInNewContext(wrappedScript, sandbox, { timeout: 10000 })
+    persistOutput(result)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    db.prepare('UPDATE data_sources SET last_output = ?, last_run_at = ? WHERE id = ?')
-      .run(JSON.stringify({ error: message }), new Date().toISOString(), source.id)
+    persistOutput({ error: message })
   }
 }
 
