@@ -1,7 +1,7 @@
 import './App.css'
 import ScriptsView from './views/ScriptsView'
 import SecretsView from './views/SecretsView'
-import PipelineBuilderView from './views/PipelineBuilderView'
+import PipelineBuilderView from './views/pipeline/PipelineBuilderView'
 import DashboardView from './views/DashboardView'
 
 function App() {
