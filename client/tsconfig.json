@@ -11,7 +11,10 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": true
+    "strict": true,
+    "paths": {
+      "@paul/types": ["../server/src/types/api.ts"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../server/src/types/api.ts"]
 }

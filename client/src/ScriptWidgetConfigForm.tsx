@@ -1,4 +1,4 @@
-import type { Source } from './api'
+import type { Source } from '@paul/types'
 
 function flattenKeys(obj: unknown, prefix = ''): string[] {
   if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return prefix ? [prefix] : []

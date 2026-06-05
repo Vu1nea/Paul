@@ -3,7 +3,7 @@ import Editor from '@monaco-editor/react'
 import ConnectorsView from './ConnectorsView'
 import AppShell from '../AppShell'
 import { getSources, getSource, createSource, updateSource, deleteSource, runSource } from '../api'
-import type { Source } from '../api'
+import type { Source } from '@paul/types'
 
 type ActiveTab = 'sources' | 'connectors'
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getSource, getWeather } from '../api'
-import type { WidgetConfigs } from '../api'
+import type { WidgetConfigs } from '@paul/types'
 import type { WeatherConfig, WeatherData, ScriptConfig } from '../widgets'
 
 export function useWidgetData(widgetConfigs: WidgetConfigs) {
@@ -9,18 +9,18 @@ export function useWidgetData(widgetConfigs: WidgetConfigs) {
 
   const weatherKey = Object.entries(widgetConfigs)
     .filter(([, w]) => w.type === 'weather')
-    .map(([id, { config }]) => { const c = config as WeatherConfig; return `${id}:${c.latitude}:${c.longitude}:${c.units}` })
+    .map(([id, { config }]) => { const c = config as unknown as WeatherConfig; return `${id}:${c.latitude}:${c.longitude}:${c.units}` })
     .sort().join('|')
 
   const scriptKey = Object.entries(widgetConfigs)
     .filter(([, w]) => w.type === 'script')
-    .map(([id, { config }]) => `${id}:${(config as ScriptConfig).sourceId}`)
+    .map(([id, { config }]) => `${id}:${(config as unknown as ScriptConfig).sourceId}`)
     .sort().join('|')
 
   useEffect(() => {
     const controller = new AbortController()
     for (const [id, { config }] of Object.entries(widgetConfigs).filter(([, w]) => w.type === 'weather')) {
-      const { latitude, longitude, units } = config as WeatherConfig
+      const { latitude, longitude, units } = config as unknown as WeatherConfig
       setWeatherDataMap(prev => ({ ...prev, [id]: null }))
       getWeather(latitude, longitude, units ?? 'metric', controller.signal)
         .then(data => setWeatherDataMap(prev => ({ ...prev, [id]: data as WeatherData })))
@@ -32,7 +32,7 @@ export function useWidgetData(widgetConfigs: WidgetConfigs) {
   useEffect(() => {
     const controller = new AbortController()
     for (const [id, { config }] of Object.entries(widgetConfigs).filter(([, w]) => w.type === 'script')) {
-      const { sourceId: sid } = config as ScriptConfig
+      const { sourceId: sid } = config as unknown as ScriptConfig
       if (!sid) continue
       setScriptDataMap(prev => ({ ...prev, [id]: null }))
       getSource(sid, controller.signal)

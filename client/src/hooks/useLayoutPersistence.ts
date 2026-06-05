@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import type { MutableRefObject } from 'react'
+import type { RefObject } from 'react'
 import { getLayout, saveLayout } from '../api'
-import type { WidgetConfigs } from '../api'
+import type { WidgetConfigs } from '@paul/types'
 
 const defaultWidgetConfigs: WidgetConfigs = {
   'placeholder-1': { type: 'placeholder', config: { label: 'Widget 1' } },
@@ -9,7 +9,7 @@ const defaultWidgetConfigs: WidgetConfigs = {
   'weather-1': { type: 'weather', config: { city: 'Montreal', latitude: 45.5017, longitude: -73.5673, units: 'imperial' } },
 }
 
-export function useLayoutPersistence(setLayoutsRef: MutableRefObject<(layouts: unknown) => void>) {
+export function useLayoutPersistence(setLayoutsRef: RefObject<(layouts: unknown) => void>) {
   const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfigs>(defaultWidgetConfigs)
   const [layoutLoaded, setLayoutLoaded] = useState(false)
   const [saveError, setSaveError] = useState(false)

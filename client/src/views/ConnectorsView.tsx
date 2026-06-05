@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getConnectors, createConnector, updateConnector, deleteConnector } from '../api'
-import type { Connector } from '../api'
+import type { Connector } from '@paul/types'
 
 interface Variable { name: string; label: string; placeholder: string }
 
