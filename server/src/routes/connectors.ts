@@ -2,6 +2,12 @@ import { Router, Request, Response } from 'express'
 import { randomUUID } from 'crypto'
 import db from '../db'
 
+/**
+ * GET    /api/connectors       — returns all connectors, including built-ins.
+ * POST   /api/connectors       — creates a user-defined connector (is_builtin = 0).
+ * PUT    /api/connectors/:id   — full update; returns 403 for built-in connectors.
+ * DELETE /api/connectors/:id   — hard delete; returns 403 for built-in connectors.
+ */
 const router = Router()
 
 router.get('/', (_req: Request, res: Response) => {

@@ -1,5 +1,13 @@
 import { Router, Request, Response } from 'express'
 
+/**
+ * GET /api/weather?latitude=&longitude=&units=
+ * Proxies Open-Meteo's forecast endpoint and returns only the current_weather fields
+ * the client needs: `{ temperature, windspeed, weathercode }`.
+ * `units` defaults to 'imperial' if omitted. Translates to Open-Meteo's
+ * temperature_unit (celsius/fahrenheit) and windspeed_unit (kmh/mph) params.
+ * Returns 500 if the upstream Open-Meteo request fails.
+ */
 const router = Router()
 
 router.get('/', async (req: Request, res: Response) => {

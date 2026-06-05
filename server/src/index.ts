@@ -8,6 +8,19 @@ import sourcesRouter from './routes/sources'
 import connectorsRouter from './routes/connectors'
 import secretsRouter from './routes/secrets'
 
+/**
+ * Express server entry point.
+ * Routes:
+ *   GET  /health              — liveness check
+ *   *    /api/layout          — grid layout + widget config persistence
+ *   GET  /api/weather         — proxies Open-Meteo current weather
+ *   *    /api/sources         — data source CRUD + run-on-demand
+ *   *    /api/connectors      — HTTP connector template CRUD
+ *   *    /api/secrets         — encrypted secret key/value store
+ *
+ * Startup order matters: seed runs before startAllCronJobs so built-in
+ * connectors exist before any pipeline that references them is scheduled.
+ */
 const app = express()
 
 app.use(cors())

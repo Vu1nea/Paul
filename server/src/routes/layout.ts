@@ -1,6 +1,15 @@
 import { Router, Request, Response } from 'express'
 import db from '../db'
 
+/**
+ * GET  /api/layout — returns `{ layout, configs }` from the DB.
+ *   layout is the parsed JSON from the layouts table (null if no row exists yet).
+ *   configs is a map of widget ID → { type, config } from the widgets table.
+ *
+ * POST /api/layout — atomically replaces the layout row and all widget rows.
+ *   Widgets are fully replaced inside a transaction (delete-all + re-insert),
+ *   so any widget absent from the request body is hard-deleted.
+ */
 const router = Router()
 
 router.get('/', (_req: Request, res: Response) => {

@@ -1,3 +1,10 @@
+/**
+ * Server-side pipeline step types. These mirror the client's step interfaces in
+ * client/src/views/pipeline/steps/types.ts with one key difference: MathStep.left
+ * and MathStep.right are `string | number` here (the server can receive either),
+ * whereas the client always sends strings.
+ */
+
 export interface FetchStep {
   type: 'fetch'
   id: string
@@ -61,6 +68,7 @@ export interface Pipeline {
   steps: PipelineStep[]
 }
 
+/** Subset of the connectors table row used during pipeline compilation. */
 export interface ConnectorRow {
   id: string
   url_template: string
