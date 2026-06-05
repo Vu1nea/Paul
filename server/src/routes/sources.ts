@@ -7,20 +7,23 @@ import { registerCronJob, runScript, stopCronJob } from '../services/runner'
 
 const router = Router()
 
+/** Looks up a connector by ID for use during pipeline compilation. Returns undefined if not found. */
 function getConnector(id: string): ConnectorRow | undefined {
   return db.prepare('SELECT id, url_template, method, headers_json, body_template FROM connectors WHERE id = ?')
     .get(id) as ConnectorRow | undefined
 }
 
+/** Parses a JSON-serialised last_output value. Returns null for never-run sources. */
 function parseOutput(raw: string | null): unknown {
   return raw ? JSON.parse(raw) : null
 }
 
-// pipeline_json takes precedence: when present it is compiled to JS and stored in script.
+/** Compiles pipeline_json to JS when present; otherwise returns the raw script. pipeline_json always takes precedence. */
 function resolveScript(pipelineJson: string | undefined, script: string | undefined): string {
   return pipelineJson ? buildScriptFromJson(pipelineJson, getConnector) : (script ?? '')
 }
 
+/** Fetches only the fields needed to register a cron job after a create or update. */
 function fetchSource(id: string) {
   return db.prepare('SELECT id, name, script, schedule FROM data_sources WHERE id = ?').get(id) as {
     id: string; name: string; script: string; schedule: string

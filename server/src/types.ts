@@ -1,4 +1,4 @@
-// Minimal shape used for cron job registration — does not include output or pipeline_json columns.
+/** Minimal shape used for cron job registration — only the columns needed to schedule and run a script. */
 export interface DataSource {
   id: string
   name: string

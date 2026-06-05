@@ -2,6 +2,13 @@ import { Router, Request, Response } from 'express'
 import db from '../db'
 import { encryptValue } from '../services/encryption'
 
+/**
+ * GET    /api/secrets       — returns `{ keys: string[] }`. Encrypted values are never exposed.
+ * POST   /api/secrets       — encrypts and stores a new key/value pair. Returns 409 if key exists.
+ * DELETE /api/secrets/:key  — hard-deletes a secret. Returns 404 if not found.
+ *
+ * Values are encrypted with AES-256-GCM via encryptValue before storage.
+ */
 const router = Router()
 
 // Returns key names only — encrypted values are never exposed over the API.
