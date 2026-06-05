@@ -2,12 +2,14 @@ export interface FetchStep {
   type: 'fetch'
   id: string
   label: string
+  // null after resolveConnectorStep has merged the connector's template into this step.
   connector_id: string | null
   url: string | null
   method: string | null
   headers: { key: string; value: string }[]
   body: string | null
   auth: { type: 'bearer' | 'apikey'; secret: string } | null
+  // User-supplied values substituted into {placeholder} slots in connector templates.
   variables: Record<string, string>
 }
 

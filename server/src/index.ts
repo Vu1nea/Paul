@@ -23,7 +23,7 @@ app.use('/api/sources', sourcesRouter)
 app.use('/api/connectors', connectorsRouter)
 app.use('/api/secrets', secretsRouter)
 
-// Seed built-ins and start cron jobs
+// Seed must run before cron jobs so built-in connectors exist when pipelines resolve them.
 seedBuiltinConnectors()
 startAllCronJobs()
 

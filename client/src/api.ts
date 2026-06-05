@@ -1,5 +1,4 @@
 const base = import.meta.env.VITE_API_URL as string
-
 // Layout
 
 export function getLayout(): Promise<{ layout: unknown; configs: WidgetConfigs }> {

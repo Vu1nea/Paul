@@ -1,5 +1,6 @@
 import type { FetchStep } from '../types'
 
+// Prevents backslashes and single quotes in user-supplied strings from breaking generated JS literals.
 function escapeSingleQuoted(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
 }
@@ -10,7 +11,7 @@ function escapeSingleQuoted(s: string): string {
  */
 export function generateFetchStep(step: FetchStep): string {
   const url = step.url ?? ''
-  const safeUrl = url.replace(/\$\{/g, '\\${')
+  const safeUrl = url.replace(/\$\{/g, '\\${') // prevent template literal injection in generated code
   const method = step.method ?? 'GET'
 
   const headerLines: string[] = []

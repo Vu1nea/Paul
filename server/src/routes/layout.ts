@@ -22,6 +22,7 @@ router.post('/', (req: Request, res: Response) => {
   if (configs) {
     const deleteAll = db.prepare('DELETE FROM widgets')
     const insert = db.prepare('INSERT INTO widgets (id, type, config_json) VALUES (?, ?, ?)')
+    // Full replace inside a transaction: simpler than diffing and handles deletions automatically.
     const saveWidgets = db.transaction((entries: [string, { type: string; config: unknown }][]) => {
       deleteAll.run()
       for (const [id, { type, config }] of entries) {

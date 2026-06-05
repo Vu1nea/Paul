@@ -4,6 +4,7 @@ import { encryptValue } from '../services/encryption'
 
 const router = Router()
 
+// Returns key names only — encrypted values are never exposed over the API.
 router.get('/', (_req: Request, res: Response) => {
   const rows = db.prepare('SELECT key FROM secrets').all() as { key: string }[]
   res.json({ keys: rows.map(r => r.key) })

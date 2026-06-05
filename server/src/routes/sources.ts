@@ -16,6 +16,7 @@ function parseOutput(raw: string | null): unknown {
   return raw ? JSON.parse(raw) : null
 }
 
+// pipeline_json takes precedence: when present it is compiled to JS and stored in script.
 function resolveScript(pipelineJson: string | undefined, script: string | undefined): string {
   return pipelineJson ? buildScriptFromJson(pipelineJson, getConnector) : (script ?? '')
 }
