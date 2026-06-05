@@ -7,6 +7,10 @@ import type { DataSource } from '../types'
 
 const activeJobs = new Map<string, ScheduledTask>()
 
+/**
+ * Runs a data source script inside a sandboxed VM with a 10s timeout.
+ * Persists the return value (or an error message object) to `last_output`.
+ */
 export async function runScript(source: DataSource): Promise<void> {
   const wrappedScript = `(async () => { ${source.script} })()`
   const getSecret = (key: string): string => {
@@ -29,6 +33,7 @@ export async function runScript(source: DataSource): Promise<void> {
   }
 }
 
+/** Loads all data sources from the DB and registers a cron job for each. Called once on startup. */
 export function startAllCronJobs(): void {
   const sources = db.prepare('SELECT id, name, script, schedule FROM data_sources').all() as DataSource[]
   for (const source of sources) {
@@ -36,6 +41,10 @@ export function startAllCronJobs(): void {
   }
 }
 
+/**
+ * Registers (or replaces) the cron job for a single data source.
+ * Silently skips sources with an invalid cron schedule.
+ */
 export function registerCronJob(source: DataSource): void {
   stopCronJob(source.id)
   if (cron.validate(source.schedule)) {
@@ -44,6 +53,7 @@ export function registerCronJob(source: DataSource): void {
   }
 }
 
+/** Stops and removes the active cron job for the given source ID. No-op if not running. */
 export function stopCronJob(id: string): void {
   const task = activeJobs.get(id)
   if (task) {

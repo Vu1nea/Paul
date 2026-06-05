@@ -17,6 +17,7 @@ const BUILTIN_CONNECTORS = [
   },
 ]
 
+/** Inserts built-in connectors using INSERT OR IGNORE. Safe to call on every startup. */
 export function seedBuiltinConnectors(): void {
   const insert = db.prepare(`
     INSERT OR IGNORE INTO connectors

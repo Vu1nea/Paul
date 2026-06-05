@@ -4,6 +4,10 @@ function escapeSingleQuoted(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
 }
 
+/**
+ * Generates the `const <id> = await fetch(...)` JS statement for a fetch step.
+ * Injects bearer/apikey auth headers via the sandbox's `getSecret` function when configured.
+ */
 export function generateFetchStep(step: FetchStep): string {
   const url = step.url ?? ''
   const safeUrl = url.replace(/\$\{/g, '\\${')

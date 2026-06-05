@@ -5,6 +5,10 @@ const KEY: Buffer = (() => {
   return crypto.scryptSync(raw, 'paul_salt', 32) as Buffer
 })()
 
+/**
+ * Encrypts a plaintext string using AES-256-GCM.
+ * @returns Colon-delimited hex string: `iv:authTag:ciphertext`
+ */
 export function encryptValue(value: string): string {
   const iv = crypto.randomBytes(16)
   const cipher = crypto.createCipheriv('aes-256-gcm', KEY, iv)
@@ -13,6 +17,7 @@ export function encryptValue(value: string): string {
   return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted.toString('hex')
 }
 
+/** Decrypts a value produced by `encryptValue`. Throws if tampered or key mismatch. */
 export function decryptValue(stored: string): string {
   const parts = stored.split(':')
   const iv = Buffer.from(parts[0], 'hex')

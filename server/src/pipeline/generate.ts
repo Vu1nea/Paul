@@ -6,6 +6,10 @@ import { generateMergeStep } from './steps/merge'
 import { generateMathStep } from './steps/math'
 import { generateOutputStep } from './steps/output'
 
+/**
+ * Parses a pipeline JSON string, resolves any connector references, and returns
+ * a runnable JS script string suitable for execution in the VM sandbox.
+ */
 export function buildScriptFromJson(
   pipelineJson: string,
   getConnector: (id: string) => ConnectorRow | undefined
@@ -20,10 +24,18 @@ export function buildScriptFromJson(
   return generateScript({ steps: resolvedSteps })
 }
 
+/**
+ * Replaces `{name}` placeholders in a template string using the provided map.
+ * Unresolved placeholders are left as-is.
+ */
 export function substituteVariables(template: string, variables: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, name) => variables[name] ?? `{${name}}`)
 }
 
+/**
+ * Merges a connector's URL template, method, headers, and body into a fetch step,
+ * substituting the step's variables. Clears `connector_id` on the returned step.
+ */
 export function resolveConnectorStep(step: FetchStep, connector: ConnectorRow): FetchStep {
   const sub = (t: string) => substituteVariables(t, step.variables)
   const headers = JSON.parse(connector.headers_json) as { key: string; value: string }[]
@@ -37,6 +49,10 @@ export function resolveConnectorStep(step: FetchStep, connector: ConnectorRow): 
   }
 }
 
+/**
+ * Walks pipeline steps in order and concatenates their generated code lines.
+ * Appends an implicit `return <lastStep>` if no explicit output step is present.
+ */
 export function generateScript(pipeline: Pipeline): string {
   const lines: string[] = []
   const hasOutput = pipeline.steps.some(s => s.type === 'output')
