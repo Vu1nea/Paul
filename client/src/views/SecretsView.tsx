@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react'
 import AppShell from '../AppShell'
 import { getSecretKeys, createSecret, deleteSecret } from '../api'
 
+/**
+ * CRUD view for named secrets (API keys, tokens, etc.).
+ * Secret values are write-only — the server never returns them, only key names.
+ * Secrets are referenced in pipeline FetchSteps by their key name to inject auth headers.
+ * Returns a 409 if a key already exists; the form surfaces this as an inline error.
+ */
 export default function SecretsView() {
   const [keys, setKeys] = useState<string[]>([])
   const [newKey, setNewKey] = useState('')

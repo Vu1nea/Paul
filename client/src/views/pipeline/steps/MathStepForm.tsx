@@ -1,7 +1,13 @@
 import type { MathStepData, AnyStep } from './types'
 
+/**
+ * Form for a math step. Applies a binary arithmetic operation and writes the
+ * result to a named output key. `left` and `right` each accept either a
+ * dot-notation field path from the source step or a plain numeric literal.
+ */
 interface Props {
   step: MathStepData
+  /** All steps except this one — any step type can be a math source. */
   otherSteps: AnyStep[]
   onChange: (patch: Partial<MathStepData>) => void
 }

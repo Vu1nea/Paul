@@ -1,7 +1,14 @@
 import type { OutputStepData, AnyStep } from './types'
 
+/**
+ * Form for an output step. Defines the final shape of the pipeline's result by
+ * mapping fields from a source step to top-level output keys. `from` is a
+ * dot-notation field path (e.g. "weather.temperature"), `to` is the key name
+ * written into the pipeline's last_output.
+ */
 interface Props {
   step: OutputStepData
+  /** All steps except this one — any step type can be an output source. */
   otherSteps: AnyStep[]
   onChange: (patch: Partial<OutputStepData>) => void
 }

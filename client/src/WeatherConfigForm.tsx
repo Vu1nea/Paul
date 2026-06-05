@@ -1,7 +1,15 @@
 import { useState, useRef } from 'react'
 
+/**
+ * Config form for the WeatherWidget. Provides a debounced city search (400 ms)
+ * backed by the Open-Meteo geocoding API. Selecting a city populates latitude and
+ * longitude automatically — the user never enters coordinates manually.
+ */
+
+/** A single result from the Open-Meteo geocoding API (geocoding-api.open-meteo.com). */
 interface GeoResult {
   name: string
+  /** State or region — may be absent for some locations. */
   admin1?: string
   country?: string
   latitude: number
@@ -10,6 +18,7 @@ interface GeoResult {
 
 interface Props {
   config: Record<string, unknown>
+  /** Called on every user action that changes the config (city select, units toggle). */
   onChange: (config: Record<string, unknown>) => void
 }
 

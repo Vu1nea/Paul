@@ -22,12 +22,27 @@ const defaultLayouts = {
   ],
 }
 
+/**
+ * Main dashboard view — a responsive drag-and-drop grid of widgets.
+ *
+ * Layout and widget configs are loaded once on mount via useLayoutPersistence.
+ * Grid renders only after the layout is loaded (layoutLoaded gate) to prevent
+ * a flash of default positions before server data arrives.
+ *
+ * setLayoutsRef and scheduleSaveRef are stable refs that bridge the
+ * useResponsiveLayout hook (called before the persistence hook) back to the
+ * functions returned by useLayoutPersistence. This avoids circular hook
+ * dependencies while keeping the onLayoutChange callback always up to date.
+ *
+ * Config edits use persist() (immediate save); drag/resize uses scheduleSave()
+ * (debounced 1000 ms) so rapid moves don't flood the server.
+ */
 export default function DashboardView() {
   const { width, containerRef, mounted } = useContainerWidth()
 
   // Refs that allow hooks called after useResponsiveLayout to reach back into it
-  const setLayoutsRef = useRef<(layouts: unknown) => void>(() => {})
-  const scheduleSaveRef = useRef<(layouts: unknown) => void>(() => {})
+  const setLayoutsRef = useRef<(layouts: Record<string, unknown[]>) => void>(() => {})
+  const scheduleSaveRef = useRef<(layouts: Record<string, unknown[]>) => void>(() => {})
 
   const { layout, layouts, cols, setLayouts, setLayoutForBreakpoint, breakpoint } = useResponsiveLayout({
     width,
@@ -37,7 +52,7 @@ export default function DashboardView() {
     onLayoutChange: (_layout, allLayouts) => scheduleSaveRef.current(allLayouts),
   })
 
-  setLayoutsRef.current = setLayouts as (layouts: unknown) => void
+  setLayoutsRef.current = setLayouts as (layouts: Record<string, unknown[]>) => void
 
   const { widgetConfigs, setWidgetConfigs, widgetConfigsRef, layoutLoaded, saveError, scheduleSave, persist } = useLayoutPersistence(setLayoutsRef)
   const { weatherDataMap, scriptDataMap } = useWidgetData(widgetConfigs)

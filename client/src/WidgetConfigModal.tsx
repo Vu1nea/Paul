@@ -2,9 +2,16 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 
+/**
+ * Generic modal dialog for editing widget configuration.
+ * Rendered via createPortal into document.body, so it sits above all other stacking contexts.
+ * Closes on Escape key or backdrop click without calling onSave.
+ */
 interface Props {
   isOpen: boolean
+  /** Called when the user cancels — does NOT call onSave. Also triggered by Escape and backdrop click. */
   onClose: () => void
+  /** Called when the user clicks Save — the caller is responsible for closing the modal afterwards. */
   onSave: () => void
   title: string
   children: ReactNode

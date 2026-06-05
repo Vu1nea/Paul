@@ -1,7 +1,14 @@
 import type { MergeStepData, AnyStep } from './types'
 
+/**
+ * Form for a merge step. Combines multiple fetch step outputs into a single object
+ * by nesting each under a namespace key. For example, sources
+ * [{ stepId: 'a', as: 'weather' }, { stepId: 'b', as: 'stock' }] produce
+ * { weather: <step a output>, stock: <step b output> }.
+ */
 interface Props {
   step: MergeStepData
+  /** Only fetch steps are valid merge sources — each is nested under its `as` namespace key. */
   fetchSteps: AnyStep[]
   onChange: (patch: Partial<MergeStepData>) => void
 }

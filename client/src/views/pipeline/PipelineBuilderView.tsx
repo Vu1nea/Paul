@@ -12,6 +12,24 @@ import MergeStepForm from './steps/MergeStepForm'
 import MathStepForm from './steps/MathStepForm'
 import OutputStepForm from './steps/OutputStepForm'
 
+/**
+ * Visual pipeline builder for a single source.
+ *
+ * A pipeline is an ordered array of steps (AnyStep[]). The server stores it as
+ * pipeline_json and generates a JavaScript script from it on save. That generated
+ * script is what the scheduler actually runs.
+ *
+ * Step ordering matters — each non-fetch step references a prior step by its id
+ * (sourceId). Steps can be reordered with the ↑/↓ buttons; the generated script
+ * reflects that order.
+ *
+ * "Switch to Code Mode" replaces pipeline_json with the generated script, making
+ * it a code-mode source. This is irreversible from the UI.
+ *
+ * Run is disabled while there are unsaved changes to prevent running a stale pipeline.
+ */
+
+/** `sourceId` is the ID of the source being edited — loaded from the URL query param `?id=<id>`. */
 interface Props { sourceId: string }
 
 export default function PipelineBuilderView({ sourceId }: Props) {

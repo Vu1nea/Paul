@@ -4,6 +4,14 @@ import SecretsView from './views/SecretsView'
 import PipelineBuilderView from './views/pipeline/PipelineBuilderView'
 import DashboardView from './views/DashboardView'
 
+/**
+ * Root router. Navigation is driven entirely by URL query params — no client-side
+ * router library. Supported params:
+ *   ?view=scripts              → ScriptsView
+ *   ?view=secrets              → SecretsView
+ *   ?view=pipeline&id=<id>     → PipelineBuilderView for the given source ID
+ *   (default)                  → DashboardView
+ */
 function App() {
   const params = new URLSearchParams(window.location.search)
   const view = params.get('view')

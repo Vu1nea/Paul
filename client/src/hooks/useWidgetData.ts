@@ -3,6 +3,19 @@ import { getSource, getWeather } from '../api'
 import type { WidgetConfigs } from '@paul/types'
 import type { WeatherConfig, WeatherData, ScriptConfig } from '../widgets'
 
+/**
+ * Fetches live data for all weather and script widgets on the dashboard.
+ *
+ * Dependency keys (weatherKey, scriptKey) are stable strings derived from each
+ * widget's config. Effects only re-fire when those keys change, avoiding
+ * unnecessary fetches on unrelated re-renders. Each effect creates an
+ * AbortController so in-flight requests are cancelled when configs change.
+ *
+ * Returns two maps keyed by widget ID: weatherDataMap and scriptDataMap.
+ * In both maps, null means the fetch is in flight.
+ * weatherDataMap failure value: { error: true }
+ * scriptDataMap failure value: { error: 'Failed to load' }
+ */
 export function useWidgetData(widgetConfigs: WidgetConfigs) {
   const [weatherDataMap, setWeatherDataMap] = useState<Record<string, WeatherData | { error: true } | null>>({})
   const [scriptDataMap, setScriptDataMap] = useState<Record<string, Record<string, unknown> | null>>({})

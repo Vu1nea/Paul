@@ -9,7 +9,25 @@ const defaultWidgetConfigs: WidgetConfigs = {
   'weather-1': { type: 'weather', config: { city: 'Montreal', latitude: 45.5017, longitude: -73.5673, units: 'imperial' } },
 }
 
-export function useLayoutPersistence(setLayoutsRef: RefObject<(layouts: unknown) => void>) {
+/**
+ * Loads the persisted layout and widget configs on mount, and exposes helpers
+ * to save them back.
+ *
+ * `setLayoutsRef` is a ref to react-grid-layout's setLayouts, passed as a ref
+ * rather than a value so this hook can call it from inside the initial fetch
+ * without needing it as an effect dependency.
+ *
+ * `scheduleSave` debounces layout saves by 1000 ms — called on every drag/resize.
+ * It reads widgetConfigs via a ref so the timeout closure always has the latest
+ * value without re-scheduling on every config change.
+ *
+ * `persist` performs an immediate (non-debounced) save — used after config edits
+ * and widget add/remove where the user expects instant persistence.
+ *
+ * `layoutLoaded` gates grid rendering to prevent a flash of default positions
+ * before the server layout is applied.
+ */
+export function useLayoutPersistence(setLayoutsRef: RefObject<(layouts: Record<string, unknown[]>) => void>) {
   const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfigs>(defaultWidgetConfigs)
   const [layoutLoaded, setLayoutLoaded] = useState(false)
   const [saveError, setSaveError] = useState(false)
@@ -39,7 +57,7 @@ export function useLayoutPersistence(setLayoutsRef: RefObject<(layouts: unknown)
       .finally(() => setLayoutLoaded(true))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function scheduleSave(allLayouts: unknown) {
+  function scheduleSave(allLayouts: Record<string, unknown[]>) {
     if (!layoutLoadedRef.current) return
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
     saveTimeout.current = setTimeout(() => {
@@ -47,7 +65,7 @@ export function useLayoutPersistence(setLayoutsRef: RefObject<(layouts: unknown)
     }, 1000)
   }
 
-  function persist(layout: unknown, configs: WidgetConfigs) {
+  function persist(layout: Record<string, unknown[]>, configs: WidgetConfigs) {
     saveLayout(layout, configs).catch(showSaveError)
   }
 

@@ -1,5 +1,13 @@
 import type { Source } from '@paul/types'
 
+/**
+ * Config form for the ScriptWidget. Lets the user pick a source and then select
+ * a display key from that source's last_output. Keys are derived by flattening the
+ * output JSON into dot-notation paths (e.g. "weather.temperature").
+ * If the source has no output yet, a refresh button triggers onRefreshSources.
+ */
+
+/** Recursively collects all leaf-node dot-notation paths from a JSON object for use as displayKey options. */
 function flattenKeys(obj: unknown, prefix = ''): string[] {
   if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return prefix ? [prefix] : []
   return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) => {
@@ -12,7 +20,9 @@ function flattenKeys(obj: unknown, prefix = ''): string[] {
 interface Props {
   config: Record<string, unknown>
   onChange: (config: Record<string, unknown>) => void
+  /** Available pipeline/script sources — used to populate the source dropdown and derive displayKey options. */
   sources: Source[]
+  /** Called when the user wants to re-fetch sources after running a script to populate fresh output keys. */
   onRefreshSources: () => void
 }
 

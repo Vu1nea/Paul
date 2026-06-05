@@ -1,9 +1,18 @@
 import type { Connector } from '@paul/types'
 import type { FetchStepData, Variable } from './types'
 
+/**
+ * Form for a fetch step. Renders in one of two modes depending on whether a
+ * connector is attached:
+ *   - Connector mode: shows the connector's variable inputs only (url/method/body hidden).
+ *   - Custom mode: shows full URL, method, and optional body fields.
+ * Auth is available in both modes and references a secret by key name.
+ */
 interface Props {
   step: FetchStepData
+  /** All available connectors — used to render variable inputs when step.connector_id is set. */
   connectors: Connector[]
+  /** Called with a partial patch; caller merges it into the full step. */
   onChange: (patch: Partial<FetchStepData>) => void
 }
 

@@ -1,9 +1,17 @@
 import type { WidgetProps } from './WidgetBase'
 import { resolvePath } from '../utils/resolvePath'
 
+/**
+ * Displays a single value from a script or pipeline source's last_output.
+ * The value is resolved from the output JSON using a dot-notation path (displayKey).
+ * Shows a red error message if the source data could not be loaded from the API.
+ */
 export interface ScriptConfig {
+  /** ID of the pipeline/script source whose last output is displayed. */
   sourceId: string
+  /** Dot-notation path into the source's last_output JSON (resolved via resolvePath). */
   displayKey: string
+  /** Human-readable label shown above the value on the widget. */
   label: string
 }
 

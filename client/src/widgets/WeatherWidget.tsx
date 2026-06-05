@@ -1,15 +1,27 @@
 import type { WidgetProps } from './WidgetBase'
 
+/**
+ * Displays current weather conditions for a configured city.
+ * Weather data is fetched via the server proxy to Open-Meteo (no API key required).
+ * Temperature and wind speed units switch between metric and imperial based on config.
+ */
 export interface WeatherConfig {
+  /** Display name for the city (built from geocoding result: "Name, Region, Country"). */
   city: string
+  /** Latitude resolved via Open-Meteo geocoding — not entered manually. */
   latitude: number
+  /** Longitude resolved via Open-Meteo geocoding — not entered manually. */
   longitude: number
+  /** Controls units for temperature (°C/°F) and wind speed (km/h / mph). */
   units: 'metric' | 'imperial'
 }
 
 export interface WeatherData {
+  /** Current temperature in the units specified by WeatherConfig.units. */
   temperature: number
+  /** Wind speed in the units specified by WeatherConfig.units. */
   windspeed: number
+  /** WMO weather interpretation code — mapped to descriptions in weatherDescriptions. */
   weathercode: number
 }
 

@@ -1,7 +1,12 @@
 import type { RenameStepData, AnyStep } from './types'
 
+/**
+ * Form for a rename step. Each mapping renames one key in the source's output:
+ * `from` is the existing key name, `to` is the desired new name.
+ */
 interface Props {
   step: RenameStepData
+  /** All steps except this one — any step type can be a rename source. */
   otherSteps: AnyStep[]
   onChange: (patch: Partial<RenameStepData>) => void
 }

@@ -1,7 +1,13 @@
 import type { PickStepData, AnyStep } from './types'
 
+/**
+ * Form for a pick step. Lets the user select which fields to keep from a fetch
+ * step's output. Fields are entered as dot-notation paths, one per line
+ * (e.g. "weather.temperature"). Blank lines are stripped on blur.
+ */
 interface Props {
   step: PickStepData
+  /** Only fetch steps are valid sources for pick — other step types are excluded. */
   fetchSteps: AnyStep[]
   onChange: (patch: Partial<PickStepData>) => void
 }

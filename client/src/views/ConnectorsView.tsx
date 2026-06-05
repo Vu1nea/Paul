@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react'
 import { getConnectors, createConnector, updateConnector, deleteConnector } from '../api'
 import type { Connector } from '@paul/types'
 
+/**
+ * CRUD view for HTTP connectors — reusable API endpoint templates.
+ * A connector defines a URL template, method, and a set of named variables that
+ * get substituted at runtime (e.g. url_template "https://api.example.com/{city}",
+ * variable name "city"). Built-in connectors are read-only and shown greyed out.
+ *
+ * Variables are edited as plain text in a textarea, one per line, using the format:
+ *   name|Label|placeholder
+ * This is serialised to variables_json (a JSON array of Variable objects) on save.
+ */
+
+/** Parsed form of a connector variable. `name` is substituted into url_template as `{name}`. */
 interface Variable { name: string; label: string; placeholder: string }
 
 const emptyForm = { name: '', description: '', url_template: '', method: 'GET', headers_json: '[]', body_template: '', variables_json: '[]' }

@@ -7,6 +7,21 @@ import type { Source } from '@paul/types'
 
 type ActiveTab = 'sources' | 'connectors'
 
+/**
+ * Two-panel view for managing data sources and connectors.
+ *
+ * The left sidebar switches between a sources list and the ConnectorsView via tabs.
+ * Selecting a source loads its full detail (including last_output) with a separate
+ * getSource call — the list only carries summary data.
+ *
+ * Sources come in two modes:
+ *   - Code mode: editable in the Monaco JS editor, saved and run directly.
+ *   - Pipeline mode: pipeline_json is set; the editor is replaced with a link to
+ *     PipelineBuilderView (?view=pipeline&id=<id>). Saving is handled there.
+ *
+ * New source creation shows a mode picker modal before creating the record,
+ * so pipeline sources are redirected to the builder immediately on creation.
+ */
 export default function ScriptsView() {
   const [tab, setTab] = useState<ActiveTab>('sources')
   const [sources, setSources] = useState<Source[]>([])
