@@ -32,18 +32,21 @@ export interface ConnectorBody {
   variables_json?: string
 }
 
+export type WidgetConfigs = Record<string, { type: string; config: Record<string, unknown> }>
+
 // Layout
 
-export function getLayout(): Promise<{ layout: unknown; configs: unknown }> {
+export function getLayout(): Promise<{ layout: unknown; configs: WidgetConfigs }> {
   return fetch(`${base}/api/layout`).then(r => r.json())
 }
 
-export function saveLayout(layout: unknown, configs: unknown): void {
-  fetch(`${base}/api/layout`, {
+export async function saveLayout(layout: unknown, configs: unknown): Promise<void> {
+  const res = await fetch(`${base}/api/layout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ layout, configs }),
   })
+  if (!res.ok) throw new Error('Failed to save layout')
 }
 
 // Sources
@@ -52,8 +55,8 @@ export function getSources(): Promise<Source[]> {
   return fetch(`${base}/api/sources`).then(r => r.json())
 }
 
-export function getSource(id: string): Promise<Source> {
-  return fetch(`${base}/api/sources/${id}`).then(r => r.json())
+export function getSource(id: string, signal?: AbortSignal): Promise<Source> {
+  return fetch(`${base}/api/sources/${id}`, { signal }).then(r => r.json())
 }
 
 export function createSource(body: { name: string; script?: string; pipeline_json?: string; schedule: string }): Promise<{ id: string }> {
@@ -127,6 +130,6 @@ export function deleteSecret(key: string): Promise<void> {
 
 // Weather
 
-export function getWeather(latitude: number, longitude: number, units: string): Promise<unknown> {
-  return fetch(`${base}/api/weather?latitude=${latitude}&longitude=${longitude}&units=${units}`).then(r => r.json())
+export function getWeather(latitude: number, longitude: number, units: string, signal?: AbortSignal): Promise<unknown> {
+  return fetch(`${base}/api/weather?latitude=${latitude}&longitude=${longitude}&units=${units}`, { signal }).then(r => r.json())
 }

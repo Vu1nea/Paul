@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getLayout, saveLayout, getSources, getSource, getWeather } from './api'
-import type { Source } from './api'
+import type { Source, WidgetConfigs } from './api'
 import ReactGridLayout, { useContainerWidth, useResponsiveLayout } from 'react-grid-layout'
 import type { LayoutItem } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
@@ -13,8 +13,6 @@ import WeatherConfigForm from './WeatherConfigForm'
 import ScriptsView from './views/ScriptsView'
 import SecretsView from './views/SecretsView'
 import PipelineBuilderView from './views/PipelineBuilderView'
-
-type WidgetConfigs = Record<string, { type: string; config: Record<string, unknown> }>
 
 const defaultLayouts = {
   lg: [
@@ -53,12 +51,22 @@ function App() {
   const [draftConfig, setDraftConfig] = useState<Record<string, unknown>>({})
   const [showAddPanel, setShowAddPanel] = useState(false)
   const [availableSources, setAvailableSources] = useState<Source[]>([])
+  const [saveError, setSaveError] = useState(false)
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const saveErrorTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const widgetConfigsRef = useRef(widgetConfigs)
   widgetConfigsRef.current = widgetConfigs
   const layoutLoadedRef = useRef(false)
   layoutLoadedRef.current = layoutLoaded
+
+  function showSaveError() {
+    setSaveError(true)
+    if (saveErrorTimeout.current) clearTimeout(saveErrorTimeout.current)
+    saveErrorTimeout.current = setTimeout(() => setSaveError(false), 3000)
+  }
+  const showSaveErrorRef = useRef(showSaveError)
+  showSaveErrorRef.current = showSaveError
 
   const { width, containerRef, mounted } = useContainerWidth()
   const { layout, layouts, cols, setLayouts, setLayoutForBreakpoint, breakpoint } = useResponsiveLayout({
@@ -70,7 +78,7 @@ function App() {
       if (!layoutLoadedRef.current) return
       if (saveTimeout.current) clearTimeout(saveTimeout.current)
       saveTimeout.current = setTimeout(() => {
-        saveLayout(allLayouts, widgetConfigsRef.current)
+        saveLayout(allLayouts, widgetConfigsRef.current).catch(() => showSaveErrorRef.current())
       }, 1000)
     },
   })
@@ -88,12 +96,12 @@ function App() {
   useEffect(() => {
     getLayout()
       .then(data => {
-        if (data?.layout?.lg && Array.isArray((data.layout as { lg: unknown }).lg)) {
+        if (data.layout) {
           setInitialLayouts(data.layout as typeof defaultLayouts)
           setLayouts(data.layout as typeof defaultLayouts)
         }
-        if (data?.configs && Object.keys(data.configs as object).length > 0) {
-          setWidgetConfigs(data.configs as WidgetConfigs)
+        if (Object.keys(data.configs).length > 0) {
+          setWidgetConfigs(data.configs)
         }
       })
       .catch(() => {})
@@ -101,25 +109,29 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const controller = new AbortController()
     for (const [id, { config }] of Object.entries(widgetConfigsRef.current).filter(([, w]) => w.type === 'weather')) {
       const { latitude, longitude, units } = config as WeatherConfig
       setWeatherDataMap(prev => ({ ...prev, [id]: null }))
-      getWeather(latitude, longitude, units ?? 'metric')
+      getWeather(latitude, longitude, units ?? 'metric', controller.signal)
         .then(data => setWeatherDataMap(prev => ({ ...prev, [id]: data as WeatherData })))
-        .catch(() => setWeatherDataMap(prev => ({ ...prev, [id]: { error: true } })))
+        .catch(err => { if ((err as Error).name !== 'AbortError') setWeatherDataMap(prev => ({ ...prev, [id]: { error: true } })) })
     }
-  }, [apiUrl, weatherKey]) // eslint-disable-line react-hooks/exhaustive-deps
+    return () => controller.abort()
+  }, [weatherKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    const controller = new AbortController()
     for (const [id, { config }] of Object.entries(widgetConfigsRef.current).filter(([, w]) => w.type === 'script')) {
       const { sourceId: sid } = config as ScriptConfig
       if (!sid) continue
       setScriptDataMap(prev => ({ ...prev, [id]: null }))
-      getSource(sid)
+      getSource(sid, controller.signal)
         .then(data => setScriptDataMap(prev => ({ ...prev, [id]: data.last_output ?? null })))
-        .catch(() => setScriptDataMap(prev => ({ ...prev, [id]: { error: 'Failed to load' } })))
+        .catch(err => { if ((err as Error).name !== 'AbortError') setScriptDataMap(prev => ({ ...prev, [id]: { error: 'Failed to load' } })) })
     }
-  }, [apiUrl, scriptKey]) // eslint-disable-line react-hooks/exhaustive-deps
+    return () => controller.abort()
+  }, [scriptKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleGearClick(id: string, e: React.MouseEvent) {
     e.stopPropagation()
@@ -134,7 +146,7 @@ function App() {
     if (openModalId === null) return
     const updatedConfigs: WidgetConfigs = { ...widgetConfigs, [openModalId]: { ...widgetConfigs[openModalId]!, config: draftConfig } }
     setWidgetConfigs(updatedConfigs)
-    saveLayout(layouts, updatedConfigs)
+    saveLayout(layouts, updatedConfigs).catch(showSaveError)
     setOpenModalId(null)
   }
 
@@ -151,7 +163,7 @@ function App() {
     const updatedConfigs: WidgetConfigs = { ...widgetConfigs, [id]: { type, config: defaultConfig } }
     setWidgetConfigs(updatedConfigs)
     setShowAddPanel(false)
-    saveLayout({ lg: newLayout }, updatedConfigs)
+    saveLayout({ lg: newLayout }, updatedConfigs).catch(showSaveError)
   }
 
   function handleRemoveWidget(id: string, e: React.MouseEvent) {
@@ -162,7 +174,7 @@ function App() {
     const updatedConfigs = { ...widgetConfigs }
     delete updatedConfigs[id]
     setWidgetConfigs(updatedConfigs)
-    saveLayout({ lg: newLayout }, updatedConfigs)
+    saveLayout({ lg: newLayout }, updatedConfigs).catch(showSaveError)
   }
 
   function renderWidget(id: string, entry: { type: string; config: Record<string, unknown> }) {
@@ -260,6 +272,11 @@ function App() {
             </div>
           )}
         </WidgetConfigModal>
+      )}
+      {saveError && (
+        <div style={{ position: 'fixed', bottom: '16px', right: '16px', background: '#c33', color: '#fff', padding: '8px 14px', borderRadius: '4px', fontSize: '13px', zIndex: 9999 }}>
+          Failed to save layout
+        </div>
       )}
     </div>
   )
