@@ -1,4 +1,4 @@
-import type { Connector } from '../../../api'
+import type { Connector } from '@paul/types'
 import type { FetchStepData, Variable } from './types'
 
 interface Props {

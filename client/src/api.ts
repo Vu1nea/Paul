@@ -1,3 +1,5 @@
+import type { WidgetConfigs, Source, Connector, ConnectorBody } from '@paul/types'
+
 const base = import.meta.env.VITE_API_URL as string
 // Layout
 

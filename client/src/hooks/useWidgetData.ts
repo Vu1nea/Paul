@@ -36,8 +36,8 @@ export function useWidgetData(widgetConfigs: WidgetConfigs) {
       if (!sid) continue
       setScriptDataMap(prev => ({ ...prev, [id]: null }))
       getSource(sid, controller.signal)
-        .then(data => setScriptDataMap(prev => ({ ...prev, [id]: data.last_output ?? null })))
-        .catch(err => { if ((err as Error).name !== 'AbortError') setScriptDataMap(prev => ({ ...prev, [id]: { error: 'Failed to load' } })) })
+        .then(data => setScriptDataMap(prev => ({ ...prev, [id]: (data.last_output ?? null) as Record<string, unknown> | null })))
+        .catch(err => { if ((err as Error).name !== 'AbortError') setScriptDataMap(prev => ({ ...prev, [id]: { error: 'Failed to load' } as Record<string, unknown> })) })
     }
     return () => controller.abort()
   }, [scriptKey]) // eslint-disable-line react-hooks/exhaustive-deps
