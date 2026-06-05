@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
+import AppShell from '../AppShell'
 import { getSource, updateSource, deleteSource, runSource, getConnectors } from '../api'
 import type { Connector } from '../api'
 
@@ -89,10 +90,8 @@ export default function PipelineBuilderView({ sourceId }: Props) {
   }
 
   async function handleRun() {
-    console.log('sdlfjsdjkl')
     setRunning(true)
     const data = await runSource(sourceId)
-    console.log(`Output: ${data.output}`);
     setOutput(data.output)
     setRunning(false)
   }
@@ -277,15 +276,7 @@ export default function PipelineBuilderView({ sourceId }: Props) {
   }
 
   return (
-    <div className="view">
-      <header className="app-header">
-        <h1>Paul</h1>
-        <nav className="app-nav">
-          <a href="?">Dashboard</a>
-          <a href="?view=scripts">Scripts</a>
-          <a href="?view=secrets">Secrets</a>
-        </nav>
-      </header>
+    <AppShell>
       <main style={{ padding: '24px', maxWidth: '720px' }}>
         <label style={{ display: 'block', marginBottom: '8px' }}>
           Name<input value={name} onChange={e => { setName(e.target.value); setHasUnsavedChanges(true) }} style={{ display: 'block', width: '100%', marginTop: '4px' }} />
@@ -356,6 +347,6 @@ export default function PipelineBuilderView({ sourceId }: Props) {
           </div>
         )}
       </main>
-    </div>
+    </AppShell>
   )
 }

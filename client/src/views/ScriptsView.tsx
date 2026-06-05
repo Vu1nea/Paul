@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
 import ConnectorsView from './ConnectorsView'
+import AppShell from '../AppShell'
 import { getSources, getSource, createSource, updateSource, deleteSource, runSource } from '../api'
 import type { Source } from '../api'
 
-interface Props {
-  // intentionally empty — kept for future extensibility
-}
-
 type ActiveTab = 'sources' | 'connectors'
 
-export default function ScriptsView(_props: Props) {
+export default function ScriptsView() {
   const [tab, setTab] = useState<ActiveTab>('sources')
   const [sources, setSources] = useState<Source[]>([])
   const [selected, setSelected] = useState<Source | null>(null)
@@ -36,10 +33,6 @@ export default function ScriptsView(_props: Props) {
       setCode(full.script ?? '')
       setOutput(full.last_output ?? null)
     })
-  }
-
-  async function handleNew() {
-    setShowModeModal(true)
   }
 
   async function handleCreateSource(mode: 'code' | 'pipeline') {
@@ -79,15 +72,7 @@ export default function ScriptsView(_props: Props) {
   }
 
   return (
-    <div className="view">
-      <header className="app-header">
-        <h1>Paul</h1>
-        <nav className="app-nav">
-          <a href="?">Dashboard</a>
-          <a href="?view=scripts">Scripts</a>
-          <a href="?view=secrets">Secrets</a>
-        </nav>
-      </header>
+    <AppShell>
       <main style={{ display: 'flex', height: 'calc(100vh - 60px)' }}>
         <aside style={{ width: '240px', borderRight: '1px solid #333', padding: '12px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
@@ -96,7 +81,7 @@ export default function ScriptsView(_props: Props) {
           </div>
           {tab === 'sources' && (
             <>
-              <button onClick={handleNew} style={{ width: '100%', marginBottom: '8px' }}>+ New Script</button>
+              <button onClick={() => setShowModeModal(true)} style={{ width: '100%', marginBottom: '8px' }}>+ New Script</button>
               {sources.map(s => (
                 <div key={s.id} onClick={() => selectSource(s)} style={{ padding: '8px', cursor: 'pointer', background: selected?.id === s.id ? '#333' : 'transparent', borderRadius: '4px', marginBottom: '4px' }}>
                   <div style={{ fontWeight: 500 }}>{s.name}</div>
@@ -108,11 +93,10 @@ export default function ScriptsView(_props: Props) {
               ))}
             </>
           )}
-          {tab === 'connectors' && null}
         </aside>
 
         {tab === 'connectors' ? (
-          <ConnectorsView apiUrl={apiUrl} />
+          <ConnectorsView />
         ) : selected ? (
           <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
             {selected.pipeline_json ? (
@@ -170,6 +154,6 @@ export default function ScriptsView(_props: Props) {
           </div>
         </div>
       )}
-    </div>
+    </AppShell>
   )
 }

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
+import AppShell from '../AppShell'
 import { getSecretKeys, createSecret, deleteSecret } from '../api'
 
-interface Props {}
-
-export default function SecretsView(_props: Props) {
+export default function SecretsView() {
   const [keys, setKeys] = useState<string[]>([])
   const [newKey, setNewKey] = useState('')
   const [newValue, setNewValue] = useState('')
@@ -32,15 +31,7 @@ export default function SecretsView(_props: Props) {
   }
 
   return (
-    <div className="view">
-      <header className="app-header">
-        <h1>Paul</h1>
-        <nav className="app-nav">
-          <a href="?">Dashboard</a>
-          <a href="?view=scripts">Scripts</a>
-          <a href="?view=secrets">Secrets</a>
-        </nav>
-      </header>
+    <AppShell>
       <main style={{ padding: '24px' }}>
         <h2>Secrets</h2>
         <div className="config-form" style={{ maxWidth: '400px', marginBottom: '24px' }}>
@@ -58,6 +49,6 @@ export default function SecretsView(_props: Props) {
           ))}
         </ul>
       </main>
-    </div>
+    </AppShell>
   )
 }

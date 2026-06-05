@@ -4,11 +4,9 @@ import type { Connector } from '../api'
 
 interface Variable { name: string; label: string; placeholder: string }
 
-interface Props {}
-
 const emptyForm = { name: '', description: '', url_template: '', method: 'GET', headers_json: '[]', body_template: '', variables_json: '[]' }
 
-export default function ConnectorsView(_props: Props) {
+export default function ConnectorsView() {
   const [connectors, setConnectors] = useState<Connector[]>([])
   const [editing, setEditing] = useState<Connector | null>(null)
   const [form, setForm] = useState(emptyForm)
