@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { getLayout, saveLayout, getSources, getSource, getWeather } from './api'
+import type { Source } from './api'
 import ReactGridLayout, { useContainerWidth, useResponsiveLayout } from 'react-grid-layout'
 import type { LayoutItem } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
@@ -38,7 +40,6 @@ function flattenKeys(obj: unknown, prefix = ''): string[] {
 }
 
 function App() {
-  const apiUrl = import.meta.env.VITE_API_URL as string
   const view = new URLSearchParams(window.location.search).get('view')
   const sourceId = new URLSearchParams(window.location.search).get('id')
   
@@ -51,7 +52,7 @@ function App() {
   const [openModalId, setOpenModalId] = useState<string | null>(null)
   const [draftConfig, setDraftConfig] = useState<Record<string, unknown>>({})
   const [showAddPanel, setShowAddPanel] = useState(false)
-  const [availableSources, setAvailableSources] = useState<{ id: string; name: string; last_output: unknown }[]>([])
+  const [availableSources, setAvailableSources] = useState<Source[]>([])
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const widgetConfigsRef = useRef(widgetConfigs)
@@ -69,11 +70,7 @@ function App() {
       if (!layoutLoadedRef.current) return
       if (saveTimeout.current) clearTimeout(saveTimeout.current)
       saveTimeout.current = setTimeout(() => {
-        fetch(`${apiUrl}/api/layout`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ layout: allLayouts, configs: widgetConfigsRef.current }),
-        })
+        saveLayout(allLayouts, widgetConfigsRef.current)
       }, 1000)
     },
   })
@@ -89,27 +86,25 @@ function App() {
     .sort().join('|')
 
   useEffect(() => {
-    fetch(`${apiUrl}/api/layout`)
-      .then(res => res.json())
+    getLayout()
       .then(data => {
-        if (data?.layout?.lg && Array.isArray(data.layout.lg)) {
-          setInitialLayouts(data.layout)
-          setLayouts(data.layout)
+        if (data?.layout?.lg && Array.isArray((data.layout as { lg: unknown }).lg)) {
+          setInitialLayouts(data.layout as typeof defaultLayouts)
+          setLayouts(data.layout as typeof defaultLayouts)
         }
-        if (data?.configs && Object.keys(data.configs).length > 0) {
-          setWidgetConfigs(data.configs)
+        if (data?.configs && Object.keys(data.configs as object).length > 0) {
+          setWidgetConfigs(data.configs as WidgetConfigs)
         }
       })
       .catch(() => {})
       .finally(() => setLayoutLoaded(true))
-  }, [apiUrl])
+  }, [])
 
   useEffect(() => {
     for (const [id, { config }] of Object.entries(widgetConfigsRef.current).filter(([, w]) => w.type === 'weather')) {
       const { latitude, longitude, units } = config as WeatherConfig
       setWeatherDataMap(prev => ({ ...prev, [id]: null }))
-      fetch(`${apiUrl}/api/weather?latitude=${latitude}&longitude=${longitude}&units=${units ?? 'metric'}`)
-        .then(res => res.json())
+      getWeather(latitude, longitude, units ?? 'metric')
         .then(data => setWeatherDataMap(prev => ({ ...prev, [id]: data as WeatherData })))
         .catch(() => setWeatherDataMap(prev => ({ ...prev, [id]: { error: true } })))
     }
@@ -120,8 +115,7 @@ function App() {
       const { sourceId: sid } = config as ScriptConfig
       if (!sid) continue
       setScriptDataMap(prev => ({ ...prev, [id]: null }))
-      fetch(`${apiUrl}/api/sources/${sid}`)
-        .then(res => res.json())
+      getSource(sid)
         .then(data => setScriptDataMap(prev => ({ ...prev, [id]: data.last_output ?? null })))
         .catch(() => setScriptDataMap(prev => ({ ...prev, [id]: { error: 'Failed to load' } })))
     }
@@ -132,10 +126,7 @@ function App() {
     setOpenModalId(id)
     setDraftConfig({ ...widgetConfigs[id]?.config })
     if (widgetConfigs[id]?.type === 'script') {
-      fetch(`${apiUrl}/api/sources`)
-        .then(r => r.json())
-        .then((data: { id: string; name: string, last_output: unknown }[]) => setAvailableSources(data))
-        .catch(() => {})
+      getSources().then(setAvailableSources).catch(() => {})
     }
   }
 
@@ -143,7 +134,7 @@ function App() {
     if (openModalId === null) return
     const updatedConfigs: WidgetConfigs = { ...widgetConfigs, [openModalId]: { ...widgetConfigs[openModalId]!, config: draftConfig } }
     setWidgetConfigs(updatedConfigs)
-    fetch(`${apiUrl}/api/layout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ layout: layouts, configs: updatedConfigs }) })
+    saveLayout(layouts, updatedConfigs)
     setOpenModalId(null)
   }
 
@@ -160,7 +151,7 @@ function App() {
     const updatedConfigs: WidgetConfigs = { ...widgetConfigs, [id]: { type, config: defaultConfig } }
     setWidgetConfigs(updatedConfigs)
     setShowAddPanel(false)
-    fetch(`${apiUrl}/api/layout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ layout: { lg: newLayout }, configs: updatedConfigs }) })
+    saveLayout({ lg: newLayout }, updatedConfigs)
   }
 
   function handleRemoveWidget(id: string, e: React.MouseEvent) {
@@ -171,7 +162,7 @@ function App() {
     const updatedConfigs = { ...widgetConfigs }
     delete updatedConfigs[id]
     setWidgetConfigs(updatedConfigs)
-    fetch(`${apiUrl}/api/layout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ layout: { lg: newLayout }, configs: updatedConfigs }) })
+    saveLayout({ lg: newLayout }, updatedConfigs)
   }
 
   function renderWidget(id: string, entry: { type: string; config: Record<string, unknown> }) {
@@ -184,9 +175,9 @@ function App() {
     return <PlaceholderWidget config={entry.config as { label: string }} data={{}} />
   }
 
-  if (view === 'scripts') return <ScriptsView apiUrl={apiUrl} />
-  if (view === 'secrets') return <SecretsView apiUrl={apiUrl} />
-  if (view === 'pipeline' && sourceId) return <PipelineBuilderView apiUrl={apiUrl} sourceId={sourceId} />
+  if (view === 'scripts') return <ScriptsView />
+  if (view === 'secrets') return <SecretsView />
+  if (view === 'pipeline' && sourceId) return <PipelineBuilderView sourceId={sourceId} />
 
   return (
     <div className="app">
@@ -250,7 +241,7 @@ function App() {
                   if (keys.length === 0) return (
                     <span style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       <select disabled><option>— no output yet —</option></select>
-                      <button type="button" onClick={() => fetch(`${apiUrl}/api/sources`).then(r => r.json()).then((data: { id: string; name: string; last_output: unknown }[]) => setAvailableSources(data)).catch(() => {})}>↻</button>
+                      <button type="button" onClick={() => getSources().then(setAvailableSources).catch(() => {})}>↻</button>
                     </span>
                   )
                   return (

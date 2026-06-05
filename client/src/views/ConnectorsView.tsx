@@ -1,27 +1,24 @@
 import { useState, useEffect } from 'react'
+import { getConnectors, createConnector, updateConnector, deleteConnector } from '../api'
+import type { Connector } from '../api'
 
 interface Variable { name: string; label: string; placeholder: string }
-interface Connector {
-  id: string; name: string; description: string | null
-  url_template: string; method: string; headers_json: string
-  body_template: string | null; variables_json: string; is_builtin: number
-}
 
-interface Props { apiUrl: string }
+interface Props {}
 
 const emptyForm = { name: '', description: '', url_template: '', method: 'GET', headers_json: '[]', body_template: '', variables_json: '[]' }
 
-export default function ConnectorsView({ apiUrl }: Props) {
+export default function ConnectorsView(_props: Props) {
   const [connectors, setConnectors] = useState<Connector[]>([])
   const [editing, setEditing] = useState<Connector | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [rawVars, setRawVars] = useState('')
 
   function loadConnectors() {
-    fetch(`${apiUrl}/api/connectors`).then(r => r.json()).then(setConnectors).catch(() => {})
+    getConnectors().then(setConnectors).catch(() => {})
   }
 
-  useEffect(() => { loadConnectors() }, [apiUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadConnectors() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function startEdit(c: Connector) {
     setEditing(c)
@@ -44,9 +41,9 @@ export default function ConnectorsView({ apiUrl }: Props) {
     })
     const body = { ...form, variables_json: JSON.stringify(vars), body_template: form.body_template || null }
     if (editing.id) {
-      await fetch(`${apiUrl}/api/connectors/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      await updateConnector(editing.id, body)
     } else {
-      await fetch(`${apiUrl}/api/connectors`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      await createConnector(body)
     }
     setEditing(null)
     loadConnectors()
@@ -54,7 +51,7 @@ export default function ConnectorsView({ apiUrl }: Props) {
 
   async function handleDelete(c: Connector) {
     if (!window.confirm(`Delete connector "${c.name}"? This cannot be undone.`)) return
-    await fetch(`${apiUrl}/api/connectors/${c.id}`, { method: 'DELETE' })
+    await deleteConnector(c.id)
     loadConnectors()
   }
 

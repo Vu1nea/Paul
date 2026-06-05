@@ -1,31 +1,23 @@
 import { useState, useEffect } from 'react'
+import { getSecretKeys, createSecret, deleteSecret } from '../api'
 
-interface Props {
-  apiUrl: string
-}
+interface Props {}
 
-export default function SecretsView({ apiUrl }: Props) {
+export default function SecretsView(_props: Props) {
   const [keys, setKeys] = useState<string[]>([])
   const [newKey, setNewKey] = useState('')
   const [newValue, setNewValue] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   function loadKeys() {
-    fetch(`${apiUrl}/api/secrets`)
-      .then(r => r.json())
-      .then(data => setKeys((data as { keys: string[] }).keys))
-      .catch(() => {})
+    getSecretKeys().then(setKeys).catch(() => {})
   }
 
-  useEffect(() => { loadKeys() }, [apiUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadKeys() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleAdd() {
     if (!newKey.trim() || !newValue.trim()) return
-    const res = await fetch(`${apiUrl}/api/secrets`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: newKey.trim(), value: newValue.trim() }),
-    })
+    const res = await createSecret(newKey.trim(), newValue.trim())
     if (res.status === 409) { setError('Key already exists'); return }
     setError(null)
     setNewKey('')
@@ -35,7 +27,7 @@ export default function SecretsView({ apiUrl }: Props) {
 
   async function handleDelete(key: string) {
     if (!window.confirm(`Delete secret "${key}"? This cannot be undone.`)) return
-    await fetch(`${apiUrl}/api/secrets/${encodeURIComponent(key)}`, { method: 'DELETE' })
+    await deleteSecret(key)
     loadKeys()
   }
 

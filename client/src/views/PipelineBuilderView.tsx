@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
+import { getSource, updateSource, deleteSource, runSource, getConnectors } from '../api'
+import type { Connector } from '../api'
 
 interface Variable { name: string; label: string; placeholder: string }
-interface Connector {
-  id: string; name: string; description: string | null
-  url_template: string; method: string; headers_json: string
-  body_template: string | null; variables_json: string; is_builtin: number
-}
 
 interface StepBase { id: string; label: string }
 interface FetchStepData extends StepBase {
@@ -25,7 +22,7 @@ interface MathStepData extends StepBase { type: 'math'; sourceId: string; left: 
 interface OutputStepData extends StepBase { type: 'output'; sourceId: string; mappings: { from: string; to: string }[] }
 type AnyStep = FetchStepData | PickStepData | RenameStepData | MergeStepData | MathStepData | OutputStepData
 
-interface Props { apiUrl: string; sourceId: string }
+interface Props { sourceId: string }
 
 function newStep(type: AnyStep['type'], id: string, fetchSteps: string[]): AnyStep {
   const src = fetchSteps[0] ?? ''
@@ -39,7 +36,7 @@ function newStep(type: AnyStep['type'], id: string, fetchSteps: string[]): AnySt
   }
 }
 
-export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
+export default function PipelineBuilderView({ sourceId }: Props) {
   const [name, setName] = useState('')
   const [schedule, setSchedule] = useState('*/5 * * * *')
   const [steps, setSteps] = useState<AnyStep[]>([])
@@ -54,14 +51,14 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   useEffect(() => {
-    fetch(`${apiUrl}/api/sources/${sourceId}`).then(r => r.json()).then((data: { name: string; schedule: string; script: string; pipeline_json: string | null }) => {
+    getSource(sourceId).then(data => {
       setName(data.name)
       setSchedule(data.schedule)
-      setGeneratedScript(data.script)
+      setGeneratedScript(data.script ?? '')
       if (data.pipeline_json) setSteps((JSON.parse(data.pipeline_json) as { steps: AnyStep[] }).steps)
     })
-    fetch(`${apiUrl}/api/connectors`).then(r => r.json()).then(setConnectors)
-  }, [apiUrl, sourceId]) // eslint-disable-line react-hooks/exhaustive-deps
+    getConnectors().then(setConnectors)
+  }, [sourceId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function updateStep(id: string, patch: Partial<AnyStep>) {
     setSteps(prev => prev.map(s => s.id === id ? { ...s, ...patch } as AnyStep : s))
@@ -81,14 +78,10 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
 
   async function handleSave() {
     const pipeline_json = JSON.stringify({ steps })
-    const res = await fetch(`${apiUrl}/api/sources/${sourceId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, schedule, pipeline_json }),
-    })
-    if (res.ok) {
-      const updated = await fetch(`${apiUrl}/api/sources/${sourceId}`).then(r => r.json()) as { script: string }
-      setGeneratedScript(updated.script)
+    const ok = await updateSource(sourceId, { name, schedule, pipeline_json })
+    if (ok) {
+      const updated = await getSource(sourceId)
+      setGeneratedScript(updated.script ?? '')
       setHasUnsavedChanges(false)
       setSavedMsg(true)
       setTimeout(() => setSavedMsg(false), 2000)
@@ -98,27 +91,21 @@ export default function PipelineBuilderView({ apiUrl, sourceId }: Props) {
   async function handleRun() {
     console.log('sdlfjsdjkl')
     setRunning(true)
-    const res = await fetch(`${apiUrl}/api/sources/${sourceId}/run`, { method: 'POST' })
-    const data = await res.json() as { output: unknown }
+    const data = await runSource(sourceId)
     console.log(`Output: ${data.output}`);
-    
     setOutput(data.output)
     setRunning(false)
   }
 
   async function handleDelete() {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
-    await fetch(`${apiUrl}/api/sources/${sourceId}`, { method: 'DELETE' })
+    await deleteSource(sourceId)
     window.location.search = '?view=scripts'
   }
 
   async function handleSwitchToCode() {
     if (!window.confirm('This will replace the pipeline with the generated code. You won\'t be able to switch back.')) return
-    await fetch(`${apiUrl}/api/sources/${sourceId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, schedule, script: generatedScript }),
-    })
+    await updateSource(sourceId, { name, schedule, script: generatedScript })
     window.location.search = '?view=scripts'
   }
 

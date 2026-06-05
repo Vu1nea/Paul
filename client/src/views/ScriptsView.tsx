@@ -1,24 +1,16 @@
 import { useState, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
 import ConnectorsView from './ConnectorsView'
-
-interface Source {
-  id: string
-  name: string
-  schedule: string
-  last_run_at: string | null
-  last_output: unknown
-  script?: string
-  pipeline_json?: string | null
-}
+import { getSources, getSource, createSource, updateSource, deleteSource, runSource } from '../api'
+import type { Source } from '../api'
 
 interface Props {
-  apiUrl: string
+  // intentionally empty — kept for future extensibility
 }
 
 type ActiveTab = 'sources' | 'connectors'
 
-export default function ScriptsView({ apiUrl }: Props) {
+export default function ScriptsView(_props: Props) {
   const [tab, setTab] = useState<ActiveTab>('sources')
   const [sources, setSources] = useState<Source[]>([])
   const [selected, setSelected] = useState<Source | null>(null)
@@ -31,56 +23,40 @@ export default function ScriptsView({ apiUrl }: Props) {
   const [showModeModal, setShowModeModal] = useState(false)
 
   function loadSources() {
-    fetch(`${apiUrl}/api/sources`).then(r => r.json()).then(setSources).catch(() => {})
+    getSources().then(setSources).catch(() => {})
   }
 
-  useEffect(() => { loadSources() }, [apiUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadSources() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function selectSource(s: Source) {
-    fetch(`${apiUrl}/api/sources/${s.id}`)
-      .then(r => r.json())
-      .then((full: Source) => {
-        setSelected(full)
-        setName(full.name)
-        setSchedule(full.schedule)
-        setCode(full.script ?? '')
-        setOutput(full.last_output ?? null)
-      })
+    getSource(s.id).then(full => {
+      setSelected(full)
+      setName(full.name)
+      setSchedule(full.schedule)
+      setCode(full.script ?? '')
+      setOutput(full.last_output ?? null)
+    })
   }
 
   async function handleNew() {
     setShowModeModal(true)
   }
 
-  async function createSource(mode: 'code' | 'pipeline') {
+  async function handleCreateSource(mode: 'code' | 'pipeline') {
     setShowModeModal(false)
     if (mode === 'pipeline') {
-      const res = await fetch(`${apiUrl}/api/sources`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Untitled', script: '', schedule: '*/5 * * * *', pipeline_json: JSON.stringify({ steps: [] }) }),
-      })
-      const data = await res.json() as { id: string }
+      const data = await createSource({ name: 'Untitled', script: '', schedule: '*/5 * * * *', pipeline_json: JSON.stringify({ steps: [] }) })
       window.location.search = `?view=pipeline&id=${data.id}`
       return
     }
-    const res = await fetch(`${apiUrl}/api/sources`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Untitled', script: 'return { value: 42 }', schedule: '*/5 * * * *' }),
-    })
-    const data = await res.json() as { id: string }
+    const data = await createSource({ name: 'Untitled', script: 'return { value: 42 }', schedule: '*/5 * * * *' })
     loadSources()
-    fetch(`${apiUrl}/api/sources/${data.id}`).then(r => r.json()).then(selectSource)
+    getSource(data.id).then(selectSource)
   }
 
   async function handleSave() {
     if (!selected) return
-    await fetch(`${apiUrl}/api/sources/${selected.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, script: code, schedule }),
-    })
+    await updateSource(selected.id, { name, script: code, schedule })
     setSavedMsg(true)
     setTimeout(() => setSavedMsg(false), 2000)
     loadSources()
@@ -89,8 +65,7 @@ export default function ScriptsView({ apiUrl }: Props) {
   async function handleRun() {
     if (!selected) return
     setRunning(true)
-    const res = await fetch(`${apiUrl}/api/sources/${selected.id}/run`, { method: 'POST' })
-    const data = await res.json() as { output: unknown }
+    const data = await runSource(selected.id)
     setOutput(data.output)
     setRunning(false)
   }
@@ -98,7 +73,7 @@ export default function ScriptsView({ apiUrl }: Props) {
   async function handleDelete() {
     if (!selected) return
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
-    await fetch(`${apiUrl}/api/sources/${selected.id}`, { method: 'DELETE' })
+    await deleteSource(selected.id)
     setSelected(null)
     loadSources()
   }
@@ -180,11 +155,11 @@ export default function ScriptsView({ apiUrl }: Props) {
           <div className="modal">
             <h2 className="modal-title">Create new data source</h2>
             <div className="modal-body" style={{ display: 'flex', gap: '16px' }}>
-              <button onClick={() => createSource('pipeline')} style={{ flex: 1, padding: '16px' }}>
+              <button onClick={() => handleCreateSource('pipeline')} style={{ flex: 1, padding: '16px' }}>
                 <div style={{ fontSize: '18px', marginBottom: '8px' }}>Build a pipeline</div>
                 <div style={{ fontSize: '12px', color: '#888' }}>Visual step-by-step builder. No code required.</div>
               </button>
-              <button onClick={() => createSource('code')} style={{ flex: 1, padding: '16px' }}>
+              <button onClick={() => handleCreateSource('code')} style={{ flex: 1, padding: '16px' }}>
                 <div style={{ fontSize: '18px', marginBottom: '8px' }}>Write code</div>
                 <div style={{ fontSize: '12px', color: '#888' }}>JavaScript editor with full control.</div>
               </button>
