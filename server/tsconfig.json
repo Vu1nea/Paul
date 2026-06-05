@@ -7,7 +7,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["jest", "node"]
+    "types": ["node", "jest"]
   },
   "include": ["src"],
   "ts-node": {
