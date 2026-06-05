@@ -121,14 +121,14 @@ The pipeline system lets users build data-fetching flows visually. A pipeline is
 
 **Step types:**
 
-| Type | What it generates |
-|---|---|
-| `fetch` | `const id = await fetch(url, options).then(r => r.json())` |
-| `pick` | `const id = { field: source?.field, ... }` |
-| `rename` | `const id = { newKey: source?.oldKey, ... }` |
-| `merge` | `const id = { alias: stepRef, ... }` |
-| `math` | `const id = { ...source, outputKey: left op right }` |
-| `output` | `return { mappedKey: source?.field, ... }` |
+| Type | Description | What it generates |
+|---|---|---|
+| `fetch` | Makes an HTTP request and parses the JSON response. Supports GET/POST, custom headers, bearer/API-key auth, and connector templates with `{variable}` substitution. | `const id = await fetch(url, options).then(r => r.json())` |
+| `pick` | Selects a subset of fields from a previous step's output, discarding everything else. | `const id = { field: source?.field, ... }` |
+| `rename` | Renames fields from a previous step's output using explicit `from → to` mappings, leaving unmentioned fields unchanged. | `const id = { newKey: source?.oldKey, ... }` |
+| `merge` | Combines the outputs of multiple earlier steps into one object, assigning each under an alias key. | `const id = { alias: stepRef, ... }` |
+| `math` | Applies a binary arithmetic operation (`+`, `-`, `*`, `/`, `%`) to two operands (field references or literals) and adds the result as a new field on the source object. | `const id = { ...source, outputKey: left op right }` |
+| `output` | Shapes the final return value of the pipeline using `from → to` field mappings. If omitted, the last step's variable is returned as-is. | `return { mappedKey: source?.field, ... }` |
 
 If no `output` step is present, the last step's variable is returned implicitly.
 
