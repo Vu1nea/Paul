@@ -27,8 +27,17 @@ export default function FetchStepForm({ step, connectors, onChange }: Props) {
           <div style={{ color: '#888', fontSize: '12px' }}>Using connector: <strong>{connector.name}</strong></div>
           {vars.map(v => (
             <label key={v.name}>{v.label}
-              <input value={step.variables[v.name] ?? ''} placeholder={v.placeholder}
-                onChange={e => onChange({ variables: { ...step.variables, [v.name]: e.target.value } })} />
+              {v.type === 'select' ? (
+                <select
+                  value={step.variables[v.name] ?? v.options[0]?.value ?? ''}
+                  onChange={e => onChange({ variables: { ...step.variables, [v.name]: e.target.value } })}
+                >
+                  {v.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              ) : (
+                <input value={step.variables[v.name] ?? ''} placeholder={v.placeholder}
+                  onChange={e => onChange({ variables: { ...step.variables, [v.name]: e.target.value } })} />
+              )}
             </label>
           ))}
         </>

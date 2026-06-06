@@ -3,7 +3,7 @@ import ReactGridLayout, { useContainerWidth, useResponsiveLayout } from 'react-g
 import type { LayoutItem } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
-import { getSources } from '../api'
+import { getSources, runSource } from '../api'
 import type { Source, WidgetConfigs } from '@paul/types'
 import { PlaceholderWidget, WeatherWidget, ScriptWidget } from '../widgets'
 import type { WeatherConfig, WeatherData, ScriptConfig } from '../widgets'
@@ -161,7 +161,11 @@ export default function DashboardView() {
               config={draftConfig}
               onChange={setDraftConfig}
               sources={availableSources}
-              onRefreshSources={() => getSources().then(setAvailableSources).catch(() => {})}
+              onRefreshSources={async () => {
+                const sid = String(draftConfig.sourceId ?? '')
+                if (sid) await runSource(sid).catch(() => {})
+                getSources().then(setAvailableSources).catch(() => {})
+              }}
             />
           ) : (
             <div className="config-form">

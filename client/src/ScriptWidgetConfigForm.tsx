@@ -7,12 +7,16 @@ import type { Source } from '@paul/types'
  * If the source has no output yet, a refresh button triggers onRefreshSources.
  */
 
-/** Recursively collects all leaf-node dot-notation paths from a JSON object for use as displayKey options. */
+/** Recursively collects all leaf-node dot-notation paths from a JSON object or array for use as displayKey options. */
 function flattenKeys(obj: unknown, prefix = ''): string[] {
-  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return prefix ? [prefix] : []
+  if (typeof obj !== 'object' || obj === null) return prefix ? [prefix] : []
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return prefix ? [prefix] : []
+    return flattenKeys(obj[0], prefix ? `${prefix}.0` : '0')
+  }
   return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) => {
     const path = prefix ? `${prefix}.${k}` : k
-    if (typeof v === 'object' && v !== null && !Array.isArray(v)) return flattenKeys(v, path)
+    if (typeof v === 'object' && v !== null) return flattenKeys(v, path)
     return [path]
   })
 }

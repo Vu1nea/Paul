@@ -1,5 +1,11 @@
+/** A plain-text connector variable. `type` may be absent on legacy stored variables — treat as text. */
+export interface TextVariable { type?: 'text'; name: string; label: string; placeholder: string }
+
+/** A fixed-choice connector variable rendered as a `<select>` in FetchStepForm. */
+export interface SelectVariable { type: 'select'; name: string; label: string; options: { label: string; value: string }[] }
+
 /** A connector variable definition — `name` is the substitution key used in url_template as `{name}`. */
-export interface Variable { name: string; label: string; placeholder: string }
+export type Variable = TextVariable | SelectVariable
 
 /** Shared base for every pipeline step. `id` must be unique within a pipeline. */
 interface StepBase { id: string; label: string }

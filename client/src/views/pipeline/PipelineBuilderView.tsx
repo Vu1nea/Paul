@@ -4,7 +4,7 @@ import AppShell from '../../AppShell'
 import { getSource, updateSource, deleteSource, runSource, getConnectors } from '../../api'
 import type { Connector } from '@paul/types'
 import { newStep } from './steps/types'
-import type { AnyStep, FetchStepData, Variable } from './steps/types'
+import type { AnyStep, FetchStepData, Variable, SelectVariable } from './steps/types'
 import FetchStepForm from './steps/FetchStepForm'
 import PickStepForm from './steps/PickStepForm'
 import RenameStepForm from './steps/RenameStepForm'
@@ -110,7 +110,7 @@ export default function PipelineBuilderView({ sourceId }: Props) {
       if (connector) {
         const variables: Record<string, string> = {}
         const vars = JSON.parse(connector.variables_json) as Variable[]
-        vars.forEach(v => { variables[v.name] = '' })
+        vars.forEach(v => { variables[v.name] = v.type === 'select' ? ((v as SelectVariable).options[0]?.value ?? '') : '' })
         ;(step as FetchStepData).connector_id = connectorId
         ;(step as FetchStepData).variables = variables
         ;(step as FetchStepData).label = connector.name
