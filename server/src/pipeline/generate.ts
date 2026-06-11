@@ -29,7 +29,7 @@ export function buildScriptFromJson(
  * Unresolved placeholders are left as-is.
  */
 export function substituteVariables(template: string, variables: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (_, name) => variables[name] ?? `{${name}}`)
+  return template.replace(/\{(\w+)\}/g, (_, name) => variables[name]?.trim() ?? `{${name}}`)
 }
 
 /**
