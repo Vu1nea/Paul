@@ -5,6 +5,7 @@ import { generateRenameStep } from './steps/rename'
 import { generateMergeStep } from './steps/merge'
 import { generateMathStep } from './steps/math'
 import { generateOutputStep } from './steps/output'
+import { generateSelectStep } from './steps/select'
 
 /**
  * Parses a pipeline JSON string, resolves any connector references, and returns
@@ -64,6 +65,7 @@ export function generateScript(pipeline: Pipeline): string {
       case 'merge':  lines.push(generateMergeStep(step));  break
       case 'math':   lines.push(generateMathStep(step));   break
       case 'output': lines.push(generateOutputStep(step)); break
+      case 'select': lines.push(generateSelectStep(step)); break
     }
   }
   if (!hasOutput && pipeline.steps.length > 0) {
