@@ -7,6 +7,7 @@ import { newStep } from './steps/types'
 import type { AnyStep, FetchStepData, Variable, SelectVariable } from './steps/types'
 import FetchStepForm from './steps/FetchStepForm'
 import PickStepForm from './steps/PickStepForm'
+import SelectStepForm from './steps/SelectStepForm'
 import RenameStepForm from './steps/RenameStepForm'
 import MergeStepForm from './steps/MergeStepForm'
 import MathStepForm from './steps/MathStepForm'
@@ -130,6 +131,7 @@ export default function PipelineBuilderView({ sourceId }: Props) {
     switch (step.type) {
       case 'fetch':  return <FetchStepForm step={step} connectors={connectors} onChange={patch => onChange(patch)} />
       case 'pick':   return <PickStepForm step={step} fetchSteps={fetchSteps} onChange={patch => onChange(patch)} />
+      case 'select': return <SelectStepForm step={step} fetchSteps={fetchSteps} onChange={patch => onChange(patch)} />
       case 'rename': return <RenameStepForm step={step} otherSteps={otherSteps} onChange={patch => onChange(patch)} />
       case 'merge':  return <MergeStepForm step={step} fetchSteps={fetchSteps} onChange={patch => onChange(patch)} />
       case 'math':   return <MathStepForm step={step} otherSteps={otherSteps} onChange={patch => onChange(patch)} />
@@ -170,7 +172,7 @@ export default function PipelineBuilderView({ sourceId }: Props) {
           {showAddPicker && (
             <div style={{ position: 'absolute', top: '100%', left: 0, background: '#7a7a7a', border: '1px solid #444', borderRadius: '4px', padding: '8px', zIndex: 10, minWidth: '200px' }}>
               <div style={{ fontWeight: 500, marginBottom: '8px', padding: '4px 8px' }}>Step type</div>
-              {(['pick', 'rename', 'merge', 'math', 'output'] as const).map(type => (
+              {(['pick', 'select', 'rename', 'merge', 'math', 'output'] as const).map(type => (
                 <button key={type} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', background: 'none', border: 'none' }}
                   onClick={() => addStep(type)}>{type.charAt(0).toUpperCase() + type.slice(1)}</button>
               ))}
