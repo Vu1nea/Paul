@@ -159,6 +159,25 @@ describe('generateScript', () => {
     expect(script).toContain('const step_2 = step_1[0]')
   })
 
+  it('returns the select step result implicitly when it is the last step', () => {
+    const pipeline: Pipeline = {
+      steps: [
+        {
+          type: 'fetch', id: 'step_1', label: 'List',
+          connector_id: null, url: 'https://api.example.com/items',
+          method: 'GET', headers: [], body: null, auth: null, variables: {},
+        },
+        {
+          type: 'select', id: 'step_2', label: 'First Item',
+          sourceId: 'step_1', index: 0,
+        },
+      ],
+    }
+    const script = generateScript(pipeline)
+    expect(script).toContain('const step_2 = step_1[0]')
+    expect(script).toContain('return step_2')
+  })
+
   it('wraps the whole script correctly', () => {
     const pipeline: Pipeline = {
       steps: [
