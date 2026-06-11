@@ -35,6 +35,9 @@ export interface FetchStepData extends StepBase {
 /** Selects a subset of fields from the source step's output. `fields` are dot-notation paths. */
 export interface PickStepData extends StepBase { type: 'pick'; sourceId: string; fields: string[] }
 
+/** Extracts a single element from a list by index. User is responsible for ensuring the source returns an array. */
+export interface SelectStepData extends StepBase { type: 'select'; sourceId: string; index: number }
+
 /** Renames keys in the source step's output. `from` is the existing key, `to` is the new name. */
 export interface RenameStepData extends StepBase { type: 'rename'; sourceId: string; mappings: { from: string; to: string }[] }
 
@@ -54,7 +57,7 @@ export interface MathStepData extends StepBase { type: 'math'; sourceId: string;
 /** Maps fields from the source step's output to the final pipeline output object. `from` is a dot-notation field path, `to` is the output key name. */
 export interface OutputStepData extends StepBase { type: 'output'; sourceId: string; mappings: { from: string; to: string }[] }
 
-export type AnyStep = FetchStepData | PickStepData | RenameStepData | MergeStepData | MathStepData | OutputStepData
+export type AnyStep = FetchStepData | PickStepData | SelectStepData | RenameStepData | MergeStepData | MathStepData | OutputStepData
 
 /**
  * Creates a new step with sensible defaults for a given type.
@@ -66,6 +69,7 @@ export function newStep(type: AnyStep['type'], id: string, fetchSteps: string[])
   switch (type) {
     case 'fetch':  return { type, id, label: 'Fetch', connector_id: null, url: '', method: 'GET', headers: [], body: null, auth: null, variables: {} }
     case 'pick':   return { type, id, label: 'Pick Fields', sourceId: src, fields: [] }
+    case 'select': return { type, id, label: 'Select Element', sourceId: src, index: 0 }
     case 'rename': return { type, id, label: 'Rename', sourceId: src, mappings: [] }
     case 'merge':  return { type, id, label: 'Merge', sources: [{ stepId: src, as: 'a' }, { stepId: src, as: 'b' }] }
     case 'math':   return { type, id, label: 'Math', sourceId: src, left: '', operator: '+', right: '', outputKey: 'result' }
