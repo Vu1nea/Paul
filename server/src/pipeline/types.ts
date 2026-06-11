@@ -62,7 +62,15 @@ export interface OutputStep {
   mappings: { from: string; to: string }[]
 }
 
-export type PipelineStep = FetchStep | PickStep | RenameStep | MergeStep | MathStep | OutputStep
+export interface SelectStep {
+  type: 'select'
+  id: string
+  label: string
+  sourceId: string
+  index: number
+}
+
+export type PipelineStep = FetchStep | PickStep | RenameStep | MergeStep | MathStep | OutputStep | SelectStep
 
 export interface Pipeline {
   steps: PipelineStep[]
